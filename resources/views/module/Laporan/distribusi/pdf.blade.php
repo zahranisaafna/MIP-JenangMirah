@@ -124,7 +124,7 @@
     <div class="header">
         <h2>LAPORAN DISTRIBUSI</h2>
         <p>Periode: {{ $periodText ?? 'Semua Data' }}</p>
-        <p>Dicetak pada: {{ now()->format('d-M-Y H:i:s') }}</p>
+        <p>Dicetak pada: {{ now('Asia/Jakarta')->format('d-M-Y H:i:s') }}</p>
     </div>
 
     <!-- Summary Box -->

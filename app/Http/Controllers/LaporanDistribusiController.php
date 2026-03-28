@@ -163,8 +163,8 @@ class LaporanDistribusiController extends Controller
             'totalLokasi',
             'totalItem'
         ));
-
-        $filename = 'Laporan-Distribusi-' . now()->format('YmdHis') . '.pdf';
+        $pdf->setPaper('a4', 'portrait');
+        $filename = 'Laporan-Distribusi-' . now('Asia/Jakarta')->format('d-m-Y_H-i-s') . '.pdf';
         return $pdf->stream($filename);
         // return $pdf->download($filename);
     }

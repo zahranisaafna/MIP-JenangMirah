@@ -1,4 +1,4 @@
-<ul class="navbar-nav sidebar" id="sidebar">
+<ul class="navbar-nav sidebar" id="sidebar" style="overflow-y: auto; overflow-x: hidden; max-height: 100vh;">
     <!-- Sidebar Brand -->
     <a class="sidebar-brand d-flex flex-column align-items-center justify-content-center" href="{{ route('dashboard') }}" style="padding: 10rem 0;">
         <div class="sidebar-brand-icon" style="margin-bottom: 20px;">

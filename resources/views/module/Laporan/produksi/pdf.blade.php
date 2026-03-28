@@ -306,7 +306,7 @@
         <h2>LAPORAN PRODUKSI</h2>
         <p>MIP Jenang Mirah</p>
         <p>Periode: {{ $periodeName }}</p>
-        <p>Dicetak pada: {{ now()->format('d-M-Y H:i:s') }}</p>
+        <p>Dicetak pada: {{ now('Asia/Jakarta')->format('d-M-Y H:i:s') }}</p>
     </div>
 
     {{-- <div class="header">

@@ -24,32 +24,74 @@ class LaporanProduksiController extends Controller
         $query = Produksi::with(['user', 'detailProduksis.resep', 'detailProduksis.produk'])
             ->where('status', 'selesai'); // Hanya tampilkan produksi yang sudah selesai
 
+        $filterType = $request->input('periode', 'custom');
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+
+        switch ($filterType) {
+            case 'harian':
+                $date = now()->format('Y-m-d');
+                $query->whereDate('tanggal_produksi', $date);
+                $periodeName = 'Hari ini: ' . Carbon::parse($date)->format('d-M-Y');
+                break;
+
+            case 'bulanan':
+                $month = now()->format('Y-m');
+                $query->whereYear('tanggal_produksi', Carbon::parse($month)->year)
+                    ->whereMonth('tanggal_produksi', Carbon::parse($month)->month);
+                $periodeName = 'Bulan ini: ' . Carbon::parse($month)->format('F Y');
+                break;
+
+            case 'tahunan':
+                $year = now()->year;
+                $query->whereYear('tanggal_produksi', $year);
+                $periodeName = 'Tahun ini: ' . $year;
+                break;
+
+            case 'custom':
+            default:
+                if ($startDate && $endDate) {
+                    $query->whereBetween('tanggal_produksi', [$startDate, $endDate]);
+                    $periodeName = 'Custom: ' . Carbon::parse($startDate)->format('d-M-Y') . ' s/d ' . Carbon::parse($endDate)->format('d-M-Y');
+                } elseif ($startDate) {
+                    $query->where('tanggal_produksi', '>=', $startDate);
+                    $periodeName = 'Custom: Dari ' . Carbon::parse($startDate)->format('d-M-Y');
+                } elseif ($endDate) {
+                    $query->where('tanggal_produksi', '<=', $endDate);
+                    $periodeName = 'Custom: Sampai ' . Carbon::parse($endDate)->format('d-M-Y');
+                } else {
+                    $query->whereMonth('tanggal_produksi', now()->month)
+                        ->whereYear('tanggal_produksi', now()->year);
+                    $periodeName = 'Bulan ini: ' . now()->format('F Y');
+                }
+                break;
+        }
         // Filter berdasarkan periode preset (harian, bulanan, tahunan)
-        if (request('periode')) {
-            $today = now();
-            switch (request('periode')) {
-                case 'harian':
-                    $query->whereDate('tanggal_produksi', $today->toDateString());
-                    break;
-                case 'bulanan':
-                    $query->whereYear('tanggal_produksi', $today->year)
-                          ->whereMonth('tanggal_produksi', $today->month);
-                    break;
-                case 'tahunan':
-                    $query->whereYear('tanggal_produksi', $today->year);
-                    break;
-            }
-        }
+        // if (request('periode')) {
+        //     $today = now();
+        //     switch (request('periode')) {
+        //         case 'harian':
+        //             $query->whereDate('tanggal_produksi', $today->toDateString());
+        //             break;
+        //         case 'bulanan':
+        //             $query->whereYear('tanggal_produksi', $today->year)
+        //                   ->whereMonth('tanggal_produksi', $today->month);
+        //             break;
+        //         case 'tahunan':
+        //             $query->whereYear('tanggal_produksi', $today->year);
+        //             break;
+        //     }
+        // }
 
-        // Filter berdasarkan tanggal start
-        if (request('start_date')) {
-            $query->whereDate('tanggal_produksi', '>=', request('start_date'));
-        }
+        // // Filter berdasarkan tanggal start
+        // if (request('start_date')) {
+        //     $query->whereDate('tanggal_produksi', '>=', request('start_date'));
+        // }
 
-        // Filter berdasarkan tanggal end
-        if (request('end_date')) {
-            $query->whereDate('tanggal_produksi', '<=', request('end_date'));
-        }
+        // // Filter berdasarkan tanggal end
+        // if (request('end_date')) {
+        //     $query->whereDate('tanggal_produksi', '<=', request('end_date'));
+        // }
 
         $produksi = $query->orderBy('tanggal_produksi', 'desc')
             ->paginate($perPage)
@@ -75,6 +117,7 @@ class LaporanProduksiController extends Controller
             'produksi',
             'allowed',
             'perPage',
+            'periodeName',
             'totalProduksi',
             'totalProdukDihasilkan',
             'totalTarget',
@@ -91,49 +134,90 @@ class LaporanProduksiController extends Controller
     {
         $query = Produksi::with(['user', 'detailProduksis.resep.komposisiReseps.bahanBaku', 'detailProduksis.produk'])
             ->where('status', 'selesai');
+        $filterType = $request->input('periode', 'custom');
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
 
+        switch ($filterType) {
+            case 'harian':
+                $date = now()->format('Y-m-d');
+                $query->whereDate('tanggal_produksi', $date);
+                $periodeName = 'Hari ini: ' . Carbon::parse($date)->format('d-M-Y');
+                break;
+
+            case 'bulanan':
+                $month = now()->format('Y-m');
+                $query->whereYear('tanggal_produksi', Carbon::parse($month)->year)
+                    ->whereMonth('tanggal_produksi', Carbon::parse($month)->month);
+                $periodeName = 'Bulan ini: ' . Carbon::parse($month)->format('F Y');
+                break;
+
+            case 'tahunan':
+                $year = now()->year;
+                $query->whereYear('tanggal_produksi', $year);
+                $periodeName = 'Tahun ini: ' . $year;
+                break;
+
+            case 'custom':
+            default:
+                if ($startDate && $endDate) {
+                    $query->whereBetween('tanggal_produksi', [$startDate, $endDate]);
+                    $periodeName = 'Custom: ' . Carbon::parse($startDate)->format('d-M-Y') . ' s/d ' . Carbon::parse($endDate)->format('d-M-Y');
+                } elseif ($startDate) {
+                    $query->where('tanggal_produksi', '>=', $startDate);
+                    $periodeName = 'Custom: Dari ' . Carbon::parse($startDate)->format('d-M-Y');
+                } elseif ($endDate) {
+                    $query->where('tanggal_produksi', '<=', $endDate);
+                    $periodeName = 'Custom: Sampai ' . Carbon::parse($endDate)->format('d-M-Y');
+                } else {
+                    $query->whereMonth('tanggal_produksi', now()->month)
+                        ->whereYear('tanggal_produksi', now()->year);
+                    $periodeName = 'Bulan ini: ' . now()->format('F Y');
+                }
+                break;
+        }
         // Tentukan periode untuk nama file dan header PDF
-        $periodeName = 'Semua Periode';
+        // $periodeName = 'Semua Periode';
         
-        // Filter berdasarkan periode preset
-        if (request('periode')) {
-            $today = now();
-            switch (request('periode')) {
-                case 'harian':
-                    $query->whereDate('tanggal_produksi', $today->toDateString());
-                    $periodeName = 'Hari Ini (' . $today->format('d F Y') . ')';
-                    break;
-                case 'bulanan':
-                    $query->whereYear('tanggal_produksi', $today->year)
-                          ->whereMonth('tanggal_produksi', $today->month);
-                    $periodeName = 'Bulan ' . $today->format('F Y');
-                    break;
-                case 'tahunan':
-                    $query->whereYear('tanggal_produksi', $today->year);
-                    $periodeName = 'Tahun ' . $today->year;
-                    break;
-            }
-        }
+        // // Filter berdasarkan periode preset
+        // if (request('periode')) {
+        //     $today = now();
+        //     switch (request('periode')) {
+        //         case 'harian':
+        //             $query->whereDate('tanggal_produksi', $today->toDateString());
+        //             $periodeName = 'Hari Ini (' . $today->format('d F Y') . ')';
+        //             break;
+        //         case 'bulanan':
+        //             $query->whereYear('tanggal_produksi', $today->year)
+        //                   ->whereMonth('tanggal_produksi', $today->month);
+        //             $periodeName = 'Bulan ' . $today->format('F Y');
+        //             break;
+        //         case 'tahunan':
+        //             $query->whereYear('tanggal_produksi', $today->year);
+        //             $periodeName = 'Tahun ' . $today->year;
+        //             break;
+        //     }
+        // }
 
-        // Filter berdasarkan tanggal start
-        if (request('start_date')) {
-            $query->whereDate('tanggal_produksi', '>=', request('start_date'));
-        }
+        // // Filter berdasarkan tanggal start
+        // if (request('start_date')) {
+        //     $query->whereDate('tanggal_produksi', '>=', request('start_date'));
+        // }
 
-        // Filter berdasarkan tanggal end
-        if (request('end_date')) {
-            $query->whereDate('tanggal_produksi', '<=', request('end_date'));
-        }
+        // // Filter berdasarkan tanggal end
+        // if (request('end_date')) {
+        //     $query->whereDate('tanggal_produksi', '<=', request('end_date'));
+        // }
 
-        // Jika ada custom range, update nama periode
-        if (request('start_date') && request('end_date')) {
-            $periodeName = Carbon::parse(request('start_date'))->format('d F Y') . ' - ' . 
-                          Carbon::parse(request('end_date'))->format('d F Y');
-        } elseif (request('start_date')) {
-            $periodeName = 'Dari ' . Carbon::parse(request('start_date'))->format('d F Y');
-        } elseif (request('end_date')) {
-            $periodeName = 'Sampai ' . Carbon::parse(request('end_date'))->format('d F Y');
-        }
+        // // Jika ada custom range, update nama periode
+        // if (request('start_date') && request('end_date')) {
+        //     $periodeName = Carbon::parse(request('start_date'))->format('d F Y') . ' - ' . 
+        //                   Carbon::parse(request('end_date'))->format('d F Y');
+        // } elseif (request('start_date')) {
+        //     $periodeName = 'Dari ' . Carbon::parse(request('start_date'))->format('d F Y');
+        // } elseif (request('end_date')) {
+        //     $periodeName = 'Sampai ' . Carbon::parse(request('end_date'))->format('d F Y');
+        // }
 
         $produksiList = $query->orderBy('tanggal_produksi', 'desc')->get();
 
@@ -206,6 +290,7 @@ class LaporanProduksiController extends Controller
         // $filename = 'Laporan_Produksi_' . str_replace([' ', '(', ')'], '_', $periodeName) . '_' . date('YmdHis') . '.pdf';
 
         // return $pdf->download($filename);
+        $filename = 'Laporan-Produksi-' . now('Asia/Jakarta')->format('d-m-Y_H-i-s') . '.pdf';
         return $pdf->stream($filename);
     }
 

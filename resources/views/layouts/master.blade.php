@@ -335,6 +335,30 @@
             background-color: #E5203A  !important;
         }
 
+        /* Sidebar scrollable */
+        #sidebar {
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
+        }
+
+        /* Custom scrollbar tipis */
+        #sidebar::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        #sidebar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        #sidebar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+        }
+
+        #sidebar::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.6);
+        }
+
     </style>
     
     @stack('styles')
