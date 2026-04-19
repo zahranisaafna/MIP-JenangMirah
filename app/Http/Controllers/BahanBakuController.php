@@ -99,7 +99,7 @@ class BahanBakuController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'nama_bahan' => 'required|string|max:20',
+            'nama_bahan' => 'required|string|max:20|unique:bahan_baku,nama_bahan',
             'kategori' => 'required|string|max:15',
             'satuan' => 'required|string|max:10',
             'stok_minimum' => 'required|numeric|min:0',
@@ -110,6 +110,7 @@ class BahanBakuController extends Controller
         ], [
             'nama_bahan.required' => 'Nama bahan harus diisi',
             'nama_bahan.max' => 'Nama bahan maksimal 20 karakter',
+            'nama_bahan.unique'   => 'Nama bahan baku sudah digunakan',
             'kategori.required' => 'Kategori harus diisi',
             'satuan.required' => 'Satuan harus diisi',
             'stok_minimum.required' => 'Stok minimum harus diisi',
@@ -128,11 +129,23 @@ class BahanBakuController extends Controller
         $payload['updated_at'] = now();
 
         try {
-            DB::table('bahan_baku')->insert($payload);
+                DB::table('bahan_baku')->insert($payload);
         } catch (\Illuminate\Database\QueryException $e) {
-            // retry sekali jika ID kebetulan bentrok
-            $payload['id_bahan_baku'] = $this->generateId();
-            DB::table('bahan_baku')->insert($payload);
+            $errorCode = $e->errorInfo[1] ?? null;
+            $isPrimaryKeyDuplicate = $errorCode == 1062 
+                && str_contains($e->getMessage(), 'PRIMARY');
+
+            if ($isPrimaryKeyDuplicate) {
+                $payload['id_bahan_baku'] = $this->generateId();
+                DB::table('bahan_baku')->insert($payload);
+            } else {
+                throw $e;
+            }
+        //     DB::table('bahan_baku')->insert($payload);
+        // } catch (\Illuminate\Database\QueryException $e) {
+        //     // retry sekali jika ID kebetulan bentrok
+        //     $payload['id_bahan_baku'] = $this->generateId();
+        //     DB::table('bahan_baku')->insert($payload);
         }
     });
 
@@ -188,8 +201,8 @@ class BahanBakuController extends Controller
                 'produk.nama_produk',
                 'users.nama_user'
             )
-            ->orderBy('produksi.tanggal_produksi', 'desc')
-            ->orderBy('produksi.created_at', 'desc')
+            ->orderBy('produksi.tanggal_produksi', 'asc')
+            ->orderBy('produksi.created_at', 'asc')
             ->get();
 
         // Format data untuk view
@@ -250,7 +263,7 @@ class BahanBakuController extends Controller
     public function update(Request $request, string $id)
     {
         $validated = $request->validate([
-            'nama_bahan' => 'required|string|max:20',
+            'nama_bahan' => 'required|string|max:20|unique:bahan_baku,nama_bahan,' . $id . ',id_bahan_baku',
             'kategori' => 'required|string|max:15',
             'satuan' => 'required|string|max:10',
             'stok_minimum' => 'required|numeric|min:0',
@@ -262,6 +275,7 @@ class BahanBakuController extends Controller
         ], [
             'nama_bahan.required' => 'Nama bahan harus diisi',
             'nama_bahan.max' => 'Nama bahan maksimal 20 karakter',
+            'nama_bahan.unique'   => 'Nama bahan baku sudah digunakan',
             'kategori.required' => 'Kategori harus diisi',
             'satuan.required' => 'Satuan harus diisi',
             'stok_minimum.required' => 'Stok minimum harus diisi',
@@ -342,4 +356,17 @@ class BahanBakuController extends Controller
 
     //     return 'BBU' . str_pad($newNumber, 2, '0', STR_PAD_LEFT);
     // }
+    public function checkDuplicate(Request $request)
+    {
+        $excludeId = $request->input('exclude_id');
+        $duplicates = [];
+
+        if ($request->nama_bahan) {
+            $query = DB::table('bahan_baku')->where('nama_bahan', $request->nama_bahan);
+            if ($excludeId) $query->where('id_bahan_baku', '!=', $excludeId);
+            if ($query->exists()) $duplicates[] = 'Nama Bahan';
+        }
+
+        return response()->json(['duplicates' => $duplicates]);
+    }
 }

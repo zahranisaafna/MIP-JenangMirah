@@ -96,7 +96,7 @@ class UserSettingController extends Controller
             'email' => 'nullable|email|max:200|unique:users,email',
             'password' => 'required|string|min:4|confirmed',
             'role' => 'required|in:admin,karyawanproduksi,owner',
-            'no_telepon' => 'required|string|max:15|regex:/^[0-9]+$/',
+            'no_telepon' => 'required|string|max:15|regex:/^[0-9]+$/|unique:users,no_telepon',
             'status' => 'required|in:aktif,non_aktif',
         ], [
             'nama_user.required' => 'Nama user wajib diisi',
@@ -110,6 +110,7 @@ class UserSettingController extends Controller
             'role.required' => 'Role wajib dipilih',
             'no_telepon.required' => 'No telepon wajib diisi',
             'no_telepon.regex' => 'No telepon hanya boleh berisi angka',
+            'no_telepon.unique'    => 'No telepon sudah digunakan',
             'status.required' => 'Status wajib dipilih',
         ]);
 
@@ -184,7 +185,8 @@ class UserSettingController extends Controller
             ],
             'password' => 'nullable|string|min:4|confirmed',
             'role' => 'required|in:admin,karyawanproduksi,owner',
-            'no_telepon' => 'required|string|max:15|regex:/^[0-9]+$/',
+            'no_telepon' =>[ 'required|string|max:15|regex:/^[0-9]+$/',
+                            Rule::unique('users', 'no_telepon')->ignore($user->id_user, 'id_user')], 
             'status' => 'required|in:aktif,non_aktif',
         ], [
             'nama_user.required' => 'Nama user wajib diisi',
@@ -197,6 +199,7 @@ class UserSettingController extends Controller
             'role.required' => 'Role wajib dipilih',
             'no_telepon.required' => 'No telepon wajib diisi',
             'no_telepon.regex' => 'No telepon hanya boleh berisi angka',
+            'no_telepon.unique'    => 'No telepon sudah digunakan',
             'status.required' => 'Status wajib dipilih',
         ]);
 
@@ -238,4 +241,30 @@ class UserSettingController extends Controller
         return redirect()->route('setting-user.index')
             ->with('success', 'User berhasil dihapus');
     }
-}
+
+    public function checkDuplicate(Request $request)
+    {
+        $excludeId = $request->input('exclude_id');
+        $duplicates = [];
+
+        if ($request->username) {
+            $query = User::where('username', $request->username);
+            if ($excludeId) $query->where('id_user', '!=', $excludeId);
+            if ($query->exists()) $duplicates[] = 'Username';
+        }
+
+        if ($request->email) {
+            $query = User::where('email', $request->email);
+            if ($excludeId) $query->where('id_user', '!=', $excludeId);
+            if ($query->exists()) $duplicates[] = 'Email';
+        }
+
+        if ($request->no_telepon) {
+            $query = User::where('no_telepon', $request->no_telepon);
+            if ($excludeId) $query->where('id_user', '!=', $excludeId);
+            if ($query->exists()) $duplicates[] = 'No. Telepon';
+        }
+
+        return response()->json(['duplicates' => $duplicates]);
+    }
+    }

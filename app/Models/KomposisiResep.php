@@ -23,8 +23,8 @@ class KomposisiResep extends Model
     ];
 
     protected $casts = [
-        // 'jumlah_diperlukan' => 'decimal:2',
-        'jumlah_diperlukan' => 'integer',
+        'jumlah_diperlukan' => 'decimal:2',
+        // 'jumlah_diperlukan' => 'integer',
     ];
 
     public function resep()

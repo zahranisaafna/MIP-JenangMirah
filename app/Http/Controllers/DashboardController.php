@@ -188,41 +188,78 @@ class DashboardController extends Controller
         $distribusiRange = DB::table('distribusi')
             ->whereBetween('tanggal_distribusi', [$startDate, $endDate]);
 
-        $hariProduksi = $produksiRange
-            ->select(DB::raw('COUNT(DISTINCT DATE(tanggal_produksi)) as total'))
-            ->value('total');
+        $totalProduksiRange   = (clone $produksiRange)->sum('total_produk_dihasilkan');
+        $totalDistribusiRange = (clone $distribusiRange)->count();
 
-        $hariDistribusi = $distribusiRange
-            ->select(DB::raw('COUNT(DISTINCT DATE(tanggal_distribusi)) as total'))
-            ->value('total');
+        $hariProduksi = (clone $produksiRange)
+            ->selectRaw('COUNT(DISTINCT DATE(tanggal_produksi)) as total')
+            ->value('total') ?? 0;
+
+        $hariDistribusi = (clone $distribusiRange)
+            ->selectRaw('COUNT(DISTINCT DATE(tanggal_distribusi)) as total')
+            ->value('total') ?? 0;
 
         return [
-            'total_produksi'       => DB::table('produksi')->sum('total_produk_dihasilkan'),
-            'total_distribusi'     => DB::table('distribusi')->count(),
-            'total_produk'         => DB::table('produk')->count(),
-            'total_lokasi'         => DB::table('lokasi')->count(),
+            // Global (tidak difilter)
+            'total_produk'  => DB::table('produk')->count(),
+            'total_lokasi'  => DB::table('lokasi')->count(),
 
-            'produksi_bulan_ini'   => $produksiRange->sum('total_produk_dihasilkan'),
-            'distribusi_bulan_ini' => $distribusiRange->count(),
+            // Semua ikut filter range
+            'total_produksi'       => $totalProduksiRange,
+            'total_distribusi'     => $totalDistribusiRange,
+            'produksi_bulan_ini'   => $totalProduksiRange,   // alias, dipakai di view
+            'distribusi_bulan_ini' => $totalDistribusiRange, // alias, dipakai di view
 
-            'hari_produksi'        => $hariProduksi,
-            'hari_distribusi'      => $hariDistribusi,
+            'hari_produksi'  => $hariProduksi,
+            'hari_distribusi'=> $hariDistribusi,
+
+            'rata_produksi'  => $hariProduksi  > 0 ? round($totalProduksiRange  / $hariProduksi)  : 0,
+            'rata_distribusi'=> $hariDistribusi > 0 ? round($totalDistribusiRange / $hariDistribusi) : 0,
         ];
-        // return [
-        //     'total_produksi'        => DB::table('produksi')->sum('total_produk_dihasilkan'),
-        //     'total_distribusi'      => DB::table('distribusi')->count(),
-        //     'total_produk'          => DB::table('produk')->count(),
-        //     'total_lokasi'          => DB::table('lokasi')->count(),
-        //     'produksi_bulan_ini'    => DB::table('produksi')
-        //                                     ->whereMonth('tanggal_produksi', now()->month)
-        //                                     ->whereYear('tanggal_produksi', now()->year)
-        //                                     ->sum('total_produk_dihasilkan'),
-        //     'distribusi_bulan_ini'  => DB::table('distribusi')
-        //                                     ->whereMonth('tanggal_distribusi', now()->month)
-        //                                     ->whereYear('tanggal_distribusi', now()->year)
-        //                                     ->count(),
-        // ];
     }
+    // private function getStatistik(string $startDate, string $endDate): array
+    // {
+    //     $produksiRange = DB::table('produksi')
+    //         ->whereBetween('tanggal_produksi', [$startDate, $endDate]);
+
+    //     $distribusiRange = DB::table('distribusi')
+    //         ->whereBetween('tanggal_distribusi', [$startDate, $endDate]);
+
+    //     $hariProduksi = $produksiRange
+    //         ->select(DB::raw('COUNT(DISTINCT DATE(tanggal_produksi)) as total'))
+    //         ->value('total');
+
+    //     $hariDistribusi = $distribusiRange
+    //         ->select(DB::raw('COUNT(DISTINCT DATE(tanggal_distribusi)) as total'))
+    //         ->value('total');
+
+    //     return [
+    //         'total_produksi'       => DB::table('produksi')->sum('total_produk_dihasilkan'),
+    //         'total_distribusi'     => DB::table('distribusi')->count(),
+    //         'total_produk'         => DB::table('produk')->count(),
+    //         'total_lokasi'         => DB::table('lokasi')->count(),
+
+    //         'produksi_bulan_ini'   => $produksiRange->sum('total_produk_dihasilkan'),
+    //         'distribusi_bulan_ini' => $distribusiRange->count(),
+
+    //         'hari_produksi'        => $hariProduksi,
+    //         'hari_distribusi'      => $hariDistribusi,
+    //     ];
+    //     // return [
+    //     //     'total_produksi'        => DB::table('produksi')->sum('total_produk_dihasilkan'),
+    //     //     'total_distribusi'      => DB::table('distribusi')->count(),
+    //     //     'total_produk'          => DB::table('produk')->count(),
+    //     //     'total_lokasi'          => DB::table('lokasi')->count(),
+    //     //     'produksi_bulan_ini'    => DB::table('produksi')
+    //     //                                     ->whereMonth('tanggal_produksi', now()->month)
+    //     //                                     ->whereYear('tanggal_produksi', now()->year)
+    //     //                                     ->sum('total_produk_dihasilkan'),
+    //     //     'distribusi_bulan_ini'  => DB::table('distribusi')
+    //     //                                     ->whereMonth('tanggal_distribusi', now()->month)
+    //     //                                     ->whereYear('tanggal_distribusi', now()->year)
+    //     //                                     ->count(),
+    //     // ];
+    // }
 
     /** Endpoint AJAX (optional) */
     public function getChartData(Request $request)

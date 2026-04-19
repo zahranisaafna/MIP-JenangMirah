@@ -20,7 +20,7 @@
                 </h1>
                 <div class="page-title-right">
                     <ol class="breadcrumb m-0">
-                        <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Beranda</a></li>
+                        <li class="breadcrumb-item"><a href="{{ route('produksi.dashboard') }}">Beranda</a></li>
                         <li class="breadcrumb-item active">Distribusi</li>
                     </ol>
                 </div>

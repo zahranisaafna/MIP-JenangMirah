@@ -34,7 +34,7 @@
                         : route('supplier.store');
                 @endphp
                 
-                <form action="{{ $formAction }}" method="POST">
+                <form action="{{ $formAction }}" method="POST" id="formSupplier">
                     @csrf
                     @if($isEdit)
                         @method('PUT')
@@ -174,5 +174,44 @@
         </div>
     </section>
 </div>
+@push('scripts')
+<script>
+document.getElementById('formSupplier').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const form = this;
 
+    try {
+        const res = await fetch('{{ route("supplier.check-duplicate") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({
+                nama_supplier: document.getElementById('nama_supplier').value,
+                no_telepon: document.getElementById('no_telepon').value,
+                exclude_id: '{{ $isEdit ? $supplier->id_supplier : "" }}'
+            })
+        });
+
+        const data = await res.json();
+
+        if (data.duplicates.length > 0) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Data Sudah Terdaftar!',
+                html: 'Field berikut sudah digunakan:<br><br><b>' + data.duplicates.join(', ') + '</b><br><br>Silakan gunakan data yang berbeda.',
+                confirmButtonText: 'Oke, Perbaiki'
+            });
+            return;
+        }
+
+        form.submit();
+
+    } catch (err) {
+        form.submit();
+    }
+});
+</script>
+@endpush
 @endsection

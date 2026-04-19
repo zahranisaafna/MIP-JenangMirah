@@ -14,9 +14,9 @@ return new class extends Migration
         Schema::create('suppliers', function (Blueprint $table) {
             $table->char('id_supplier', 5)->primary();
             $table->char('id_bahan_baku', 5);
-            $table->string('nama_supplier', 20);
+            $table->string('nama_supplier', 20)->unique();
             $table->text('alamat');
-            $table->string('no_telepon', 15);
+            $table->string('no_telepon', 15)->unique();
             $table->string('kontak_person', 20);
             $table->enum('status', ['aktif', 'non_aktif'])->default('aktif');
             $table->timestamps();

@@ -14,10 +14,10 @@ return new class extends Migration
             $table->string('username', 8)->unique();
             $table->string('password', 255);
             $table->enum('role', ['admin', 'karyawanproduksi', 'owner']);
-            $table->string('email', 200)->nullable();
-            $table->string('no_telepon', 15);
+            $table->string('email', 200)->nullable() -> unique();
+            $table->string('no_telepon', 15) -> unique();
             $table->enum('status', ['aktif', 'non_aktif'])->default('aktif');
-            $table->rememberToken();
+            // $table->rememberToken();
             $table->timestamps();
         });
     }

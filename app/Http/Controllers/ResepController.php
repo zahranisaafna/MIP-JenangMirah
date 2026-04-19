@@ -74,7 +74,8 @@ class ResepController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'nama_resep' => 'required|string|max:20',
+            'nama_resep' => 'required|string|max:20|unique:resep,nama_resep',
+            'nama_resep.unique' => 'Nama resep sudah digunakan',
             'waktu_produksi' => 'required|integer|min:1',
             'kapasitas_produksi' => 'required|integer|min:1',
             'satuan_output' => 'required|string|max:5',
@@ -82,10 +83,14 @@ class ResepController extends Controller
             'catatan' => 'nullable|string',
             'komposisi' => 'required|array|min:1',
             'komposisi.*.id_bahan_baku' => 'required|exists:bahan_baku,id_bahan_baku',
-            'komposisi.*.jumlah_diperlukan' => 'required|numeric|min:0',
+            'komposisi.*.jumlah_diperlukan' => 'required|numeric|min:0.01',
             'komposisi.*.satuan' => 'required|string|max:5',
             'komposisi.*.keterangan' => 'nullable|string',
-        ]);
+        ],
+        [
+            'nama_resep.unique' => 'Nama resep sudah digunakan',
+        ]
+    );
 
         DB::beginTransaction();
         try {
@@ -222,7 +227,7 @@ class ResepController extends Controller
     public function update(Request $request, string $id)
     {
         $validated = $request->validate([
-            'nama_resep' => 'required|string|max:20',
+            'nama_resep' => 'required|string|max:20|unique:resep,nama_resep,' . $id . ',id_resep',
             'waktu_produksi' => 'required|integer|min:1',
             'kapasitas_produksi' => 'required|integer|min:1',
             'satuan_output' => 'required|string|max:5',
@@ -230,10 +235,19 @@ class ResepController extends Controller
             'catatan' => 'nullable|string',
             'komposisi' => 'required|array|min:1',
             'komposisi.*.id_komposisi' => 'required',
-            'komposisi.*.jumlah_diperlukan' => 'required|numeric|min:0',
+            'komposisi.*.jumlah_diperlukan' => 'required|numeric|min:0.01',
             'komposisi.*.satuan' => 'required|string|max:5',
             'komposisi.*.keterangan' => 'nullable|string',
-        ]);
+            'komposisi_baru' => 'nullable|array',
+            'komposisi_baru.*.id_bahan_baku' => 'required_with:komposisi_baru|exists:bahan_baku,id_bahan_baku',
+            'komposisi_baru.*.jumlah_diperlukan' => 'required_with:komposisi_baru|numeric|min:0.01',
+            'komposisi_baru.*.satuan' => 'required_with:komposisi_baru|string|max:5',
+            'komposisi_baru.*.keterangan' => 'nullable|string',
+        ],
+        [
+            'nama_resep.unique' => 'Nama resep sudah digunakan',
+        ]
+        );
 
         DB::beginTransaction();
         try {
@@ -267,6 +281,31 @@ class ResepController extends Controller
                         'keterangan' => $komposisi['keterangan'] ?? null,
                         'updated_at' => now(),
                     ]);
+            }
+            if ($request->filled('komposisi_baru')) {
+                $lastKomposisi = DB::table('komposisi_resep')
+                    ->orderByRaw('CAST(SUBSTRING(id_komposisi, 4) AS UNSIGNED) DESC')
+                    ->first();
+                $lastNum = 0;
+                if ($lastKomposisi && preg_match('/(\d+)$/', $lastKomposisi->id_komposisi, $m)) {
+                    $lastNum = (int) $m[1];
+                }
+
+                foreach ($request->komposisi_baru as $baru) {
+                    $lastNum++;
+                    $idKomposisi = 'KMP' . str_pad($lastNum, 2, '0', STR_PAD_LEFT);
+
+                    DB::table('komposisi_resep')->insert([
+                        'id_komposisi'      => $idKomposisi,
+                        'id_resep'          => $id,
+                        'id_bahan_baku'     => $baru['id_bahan_baku'],
+                        'jumlah_diperlukan' => $baru['jumlah_diperlukan'],
+                        'satuan'            => $baru['satuan'],
+                        'keterangan'        => $baru['keterangan'] ?? null,
+                        'created_at'        => now(),
+                        'updated_at'        => now(),
+                    ]);
+                }
             }
 
             DB::commit();
@@ -346,5 +385,19 @@ class ResepController extends Controller
                 'message' => 'Terjadi kesalahan: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    public function checkDuplicate(Request $request)
+    {
+        $excludeId = $request->input('exclude_id');
+        $duplicates = [];
+
+        if ($request->nama_resep) {
+            $query = DB::table('resep')->where('nama_resep', $request->nama_resep);
+            if ($excludeId) $query->where('id_resep', '!=', $excludeId);
+            if ($query->exists()) $duplicates[] = 'Nama Resep';
+        }
+
+        return response()->json(['duplicates' => $duplicates]);
     }
 }

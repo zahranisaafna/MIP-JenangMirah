@@ -183,7 +183,12 @@
                 @else
                 <div class="card">
                     <div class="card-header">
-                        <h5 class="card-title">Memperbarui isi bahan baku beserta jumlah yang dibutuhkan untuk komposisi produk</h5>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">Edit bahan baku yang dibutuhkan untuk komposisi produk</h5>
+                            <button type="button" class="btn btn-success btn-sm" id="btnTambahKomposisiEdit">
+                                <i class="fas fa-plus"></i> Tambah Bahan
+                            </button>
+                        </div>
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">
@@ -206,7 +211,7 @@
                                             <input type="number" name="komposisi[{{ $loop->index }}][jumlah_diperlukan]" 
                                                    class="form-control form-control-sm" 
                                                    value="{{ $komposisi->jumlah_diperlukan }}" 
-                                                   step="0.1" min="0.1" required>
+                                                   step="0.01" min="0.01" required>
                                         </td>
                                         <td>
                                             <select name="komposisi[{{ $loop->index }}][satuan]" 
@@ -215,6 +220,7 @@
                                                 <option value="kg"    {{ $komposisi->satuan == 'kg' ? 'selected' : '' }}>kg</option>
                                                 <option value="biji"  {{ $komposisi->satuan == 'biji' ? 'selected' : '' }}>biji</option>
                                                 <option value="liter" {{ $komposisi->satuan == 'liter' ? 'selected' : '' }}>liter</option>
+                                                <option value="ml" {{ $komposisi->satuan == ',ml' ? 'selected' : '' }}>ml</option>
                                                 <option value="pcs"   {{ $komposisi->satuan == 'pcs' ? 'selected' : '' }}>pcs</option>
                                                 <option value="ons"   {{ $komposisi->satuan == 'ons' ? 'selected' : '' }}>ons</option>
 
@@ -271,11 +277,15 @@ $(document).ready(function() {
     $('#btnTambahKomposisi').click(function() {
         tambahRow();
     });
-    
+    $('#btnTambahKomposisiEdit').click(function() {
+        tambahRowEdit();
+    });
     $(document).on('click', '.btnHapusRow', function() {
         $(this).closest('tr').remove();
     });
-
+    $(document).on('click', '.btnHapusRowBaru', function() {
+        $(this).closest('tr').remove();
+    });
     // Edit mode handlers
     $(document).on('click', '.btnHapusKomposisi', function() {
         if (!confirm('Yakin ingin menghapus komposisi ini?')) {
@@ -305,31 +315,57 @@ $(document).ready(function() {
             }
         });
     });
-    
-    $('#formResep').submit(function(e) {
+    $('#formResep').submit(async function(e) {
+        e.preventDefault();
+        const form = this;
+
+        // 1. Cek duplikat nama resep via AJAX
+        try {
+            const res = await fetch('{{ route("resep.check-duplicate") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({
+                    nama_resep: document.getElementById('nama_resep').value,
+                    exclude_id: '{{ $isEdit ? $resep->id_resep : "" }}'
+                })
+            });
+
+            const data = await res.json();
+
+            if (data.duplicates.length > 0) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Data Sudah Terdaftar!',
+                    html: 'Field berikut sudah digunakan:<br><br><b>' + data.duplicates.join(', ') + '</b><br><br>Silakan gunakan data yang berbeda.',
+                    confirmButtonText: 'Oke, Perbaiki'
+                });
+                return;
+            }
+        } catch (err) {
+            // fallback jika AJAX gagal
+        }
+
+        // 2. Validasi komposisi
         @if(!$isEdit)
         const rowCount = $('#komposisiContainer tr').length;
-        
         if (rowCount === 0) {
-            e.preventDefault();
-            alert('Minimal harus ada 1 komposisi bahan baku!');
-            return false;
+            Swal.fire({ icon: 'warning', title: 'Perhatian!', text: 'Minimal harus ada 1 komposisi bahan baku!' });
+            return;
         }
         @else
         const rowCount = $('#komposisiEditContainer tr').length;
-        
         if (rowCount === 0) {
-            e.preventDefault();
-            alert('Tidak boleh menghapus semua komposisi!');
-            return false;
+            Swal.fire({ icon: 'warning', title: 'Perhatian!', text: 'Tidak boleh menghapus semua komposisi!' });
+            return;
         }
 
-        // Pastikan semua input komposisi terisi
         let isValid = true;
         $('#komposisiEditContainer tr').each(function() {
             const jumlah = $(this).find('input[name*="[jumlah_diperlukan]"]').val();
             const satuan = $(this).find('select[name*="[satuan]"]').val();
-            
             if (!jumlah || parseFloat(jumlah) <= 0 || !satuan) {
                 isValid = false;
                 return false;
@@ -337,14 +373,54 @@ $(document).ready(function() {
         });
 
         if (!isValid) {
-            e.preventDefault();
-            alert('Pastikan semua jumlah dan satuan terisi dengan benar!');
-            return false;
+            Swal.fire({ icon: 'warning', title: 'Perhatian!', text: 'Pastikan semua jumlah dan satuan terisi dengan benar!' });
+            return;
         }
         @endif
-        
+
+        // 3. Submit
         $('#btnSubmit').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Menyimpan...');
+        form.submit();
     });
+    // $('#formResep').submit(function(e) {
+    //     @if(!$isEdit)
+    //     const rowCount = $('#komposisiContainer tr').length;
+        
+    //     if (rowCount === 0) {
+    //         e.preventDefault();
+    //         alert('Minimal harus ada 1 komposisi bahan baku!');
+    //         return false;
+    //     }
+    //     @else
+    //     const rowCount = $('#komposisiEditContainer tr').length;
+        
+    //     if (rowCount === 0) {
+    //         e.preventDefault();
+    //         alert('Tidak boleh menghapus semua komposisi!');
+    //         return false;
+    //     }
+
+    //     // Pastikan semua input komposisi terisi
+    //     let isValid = true;
+    //     $('#komposisiEditContainer tr').each(function() {
+    //         const jumlah = $(this).find('input[name*="[jumlah_diperlukan]"]').val();
+    //         const satuan = $(this).find('select[name*="[satuan]"]').val();
+            
+    //         if (!jumlah || parseFloat(jumlah) <= 0 || !satuan) {
+    //             isValid = false;
+    //             return false;
+    //         }
+    //     });
+
+    //     if (!isValid) {
+    //         e.preventDefault();
+    //         alert('Pastikan semua jumlah dan satuan terisi dengan benar!');
+    //         return false;
+    //     }
+    //     @endif
+        
+    //     $('#btnSubmit').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Menyimpan...');
+    // });
 });
 
 function tambahRow() {
@@ -365,7 +441,7 @@ function tambahRow() {
             <td>
                 <input type="number" name="komposisi[${rowIndex}][jumlah_diperlukan]" 
                        class="form-control form-control-sm" 
-                       step="0.1" min="0.1" placeholder="0" required>
+                       step="0.01" min="0.01" placeholder="0" required>
             </td>
             <td>
                 <select name="komposisi[${rowIndex}][satuan]" 
@@ -374,6 +450,7 @@ function tambahRow() {
                     <option value="kg">kg</option>
                     <option value="biji">biji</option>
                     <option value="liter">liter</option>
+                    <option value="ml">ml</option>
                     <option value="pcs">pcs</option>
                     <option value="ons">ons</option>
                 </select>
@@ -392,6 +469,60 @@ function tambahRow() {
     `;
     
     $('#komposisiContainer').append(row);
+}
+let newRowIndex = 0;
+
+function tambahRowEdit() {
+    newRowIndex++;
+
+    let optionsBahan = '<option value="">-- Pilih Bahan Baku --</option>';
+    bahanBaku.forEach(bahan => {
+        optionsBahan += `<option value="${bahan.id_bahan_baku}">
+            ${bahan.nama_bahan} (Stok: ${bahan.stok_saat_ini} ${bahan.satuan})
+        </option>`;
+    });
+
+    const row = `
+        <tr class="row-baru">
+            <td>
+                <select name="komposisi_baru[${newRowIndex}][id_bahan_baku]" 
+                        class="form-control form-control-sm" required>
+                    ${optionsBahan}
+                </select>
+            </td>
+            <td>
+                <input type="number" 
+                       name="komposisi_baru[${newRowIndex}][jumlah_diperlukan]"
+                       class="form-control form-control-sm" 
+                       step="0.01" min="0.01" placeholder="0" required>
+            </td>
+            <td>
+                <select name="komposisi_baru[${newRowIndex}][satuan]" 
+                        class="form-control form-control-sm" required>
+                    <option value="">-- Pilih Satuan --</option>
+                    <option value="kg">kg</option>
+                    <option value="biji">biji</option>
+                    <option value="liter">liter</option>
+                    <option value="ml">ml</option>
+                    <option value="pcs">pcs</option>
+                    <option value="ons">ons</option>
+                </select>
+            </td>
+            <td>
+                <input type="text" 
+                       name="komposisi_baru[${newRowIndex}][keterangan]"
+                       class="form-control form-control-sm" 
+                       placeholder="Opsional">
+            </td>
+            <td class="text-center">
+                <button type="button" class="btn btn-danger btn-sm btnHapusRowBaru" title="Hapus">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        </tr>
+    `;
+
+    $('#komposisiEditContainer').append(row);
 }
 </script>
 @endpush

@@ -15,19 +15,19 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             UserSeeder::class,
-            BahanBakuSeeder::class,
-            SupplierSeeder::class,
-            PembelianSeeder::class,
-            DetailPembelianSeeder::class,
-            ResepSeeder::class,
-            KomposisiResepSeeder::class,
-            ProdukSeeder::class,
-            ProduksiSeeder::class,
-            DetailProduksiSeeder::class,
-            LokasiSeeder::class,
-            DistribusiSeeder::class,
-            DistribusiDetailSeeder::class,
-            ItemDistribusiSeeder::class,
+            // BahanBakuSeeder::class,
+            // SupplierSeeder::class,
+            // PembelianSeeder::class,
+            // DetailPembelianSeeder::class,
+            // ResepSeeder::class,
+            // KomposisiResepSeeder::class,
+            // ProdukSeeder::class,
+            // ProduksiSeeder::class,
+            // DetailProduksiSeeder::class,
+            // LokasiSeeder::class,
+            // DistribusiSeeder::class,
+            // DistribusiDetailSeeder::class,
+            // ItemDistribusiSeeder::class,
         ]);
     }
     // public function run(): void

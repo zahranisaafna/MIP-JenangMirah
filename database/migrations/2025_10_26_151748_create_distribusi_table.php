@@ -16,7 +16,7 @@ return new class extends Migration
             // $table->string('kode_distribusi', 25)->unique();
             $table->date('tanggal_distribusi');
             $table->enum('jenis_distribusi', ['internal', 'eksternal']);
-            $table->text('keterangan');
+            $table->text('keterangan') -> nullable();
             $table->enum('status', ['pending', 'selesai', 'batal'])->default('pending');
             $table->timestamps();
         });

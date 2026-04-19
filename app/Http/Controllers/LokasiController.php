@@ -41,15 +41,20 @@ class LokasiController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'nama_lokasi' => 'required|string|max:50',
+            'nama_lokasi' => 'required|string|max:50|unique:lokasi,nama_lokasi',
             'jenis_lokasi' => 'required|in:gudang,toko',
             'alamat' => 'nullable|string',
             'kapasitas' => 'required|integer|min:1',
             'satuan_kapasitas' => 'required|string|max:10',
-            'penanggung_jawab' => 'required|string|max:100',
+            'penanggung_jawab' => 'required|string|max:20|unique:lokasi,penanggung_jawab',
             'no_telepon' => 'nullable|string|max:15',
             'status' => 'required|in:aktif,non_aktif',
-        ]);
+        ],
+        [
+            'nama_lokasi.unique' => 'Nama lokasi sudah ada, tidak boleh duplikat!',
+            'penanggung_jawab.unique' => 'Penanggung jawab sudah ada, tidak boleh duplikat!',
+        ]
+        );
 
         DB::beginTransaction();
         try {
@@ -110,14 +115,18 @@ class LokasiController extends Controller
         $lokasi = Lokasi::findOrFail($id);
 
         $request->validate([
-            'nama_lokasi' => 'required|string|max:50',
+            'nama_lokasi' => 'required|string|max:50|unique:lokasi,nama_lokasi,' . $id . ',id_lokasi',
             'jenis_lokasi' => 'required|in:gudang,toko',
             'alamat' => 'nullable|string',
             'kapasitas' => 'required|integer|min:1',
             'satuan_kapasitas' => 'required|string|max:10',
-            'penanggung_jawab' => 'required|string|max:100',
+            'penanggung_jawab' => 'required|string|max:20|unique:lokasi,penanggung_jawab,' . $id . ',id_lokasi',
             'no_telepon' => 'nullable|string|max:15',
             'status' => 'required|in:aktif,non_aktif',
+        ],
+        [
+            'nama_lokasi.unique' => 'Nama lokasi sudah ada, tidak boleh duplikat!',
+            'penanggung_jawab.unique' => 'Penanggung jawab sudah ada, tidak boleh duplikat!',
         ]);
 
         DB::beginTransaction();
@@ -182,15 +191,20 @@ class LokasiController extends Controller
     public function storeAjax(Request $request)
     {
         $request->validate([
-            'nama_lokasi' => 'required|string|max:50',
+            'nama_lokasi' => 'required|string|max:50|unique:lokasi,nama_lokasi',
             'jenis_lokasi' => 'required|in:gudang,toko',
             'alamat' => 'nullable|string',
             'kapasitas' => 'required|integer|min:1',
             'satuan_kapasitas' => 'required|string|max:10',
-            'penanggung_jawab' => 'required|string|max:100',
+            'penanggung_jawab' => 'required|string|max:20|unique:lokasi,penanggung_jawab',
             'no_telepon' => 'nullable|string|max:15',
             'status' => 'required|in:aktif,non_aktif',
-        ]);
+        ],
+        [
+            'nama_lokasi.unique' => 'Nama lokasi sudah ada, tidak boleh duplikat!',
+            'penanggung_jawab.unique' => 'Penanggung jawab sudah ada, tidak boleh duplikat!',
+        ]
+        );
 
         DB::beginTransaction();
         try {
@@ -237,6 +251,84 @@ class LokasiController extends Controller
                 'success' => false,
                 'message' => 'Terjadi kesalahan: ' . $e->getMessage()
             ], 500);
+        }
+    }
+
+
+    public function updateAjax(Request $request, $id)
+    {
+        $lokasi = Lokasi::findOrFail($id);
+        
+        $request->validate([
+            'nama_lokasi'      => 'required|string|max:50|unique:lokasi,nama_lokasi,' . $id . ',id_lokasi',
+            'jenis_lokasi'     => 'required|in:gudang,toko',
+            'alamat'           => 'nullable|string',
+            'kapasitas'        => 'required|integer|min:1',
+            'satuan_kapasitas' => 'required|string|max:10',
+            'penanggung_jawab' => 'required|string|max:20|unique:lokasi,penanggung_jawab,' . $id . ',id_lokasi',
+            'no_telepon'       => 'nullable|string|max:15',
+            'status'           => 'required|in:aktif,non_aktif',
+        ],
+        [
+            'nama_lokasi.unique' => 'Nama lokasi sudah ada, tidak boleh duplikat!',
+            'penanggung_jawab.unique' => 'Penanggung jawab sudah ada, tidak boleh duplikat!',
+        ]
+        );
+
+        // Cek duplikat nama (exclude id sendiri)
+        $existingLokasi = Lokasi::whereRaw('LOWER(nama_lokasi) = ?', [strtolower($request->nama_lokasi)])
+            ->where('id_lokasi', '!=', $id)
+            ->first();
+
+        if ($existingLokasi) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Nama lokasi sudah ada!'
+            ], 422);
+        }
+
+        DB::beginTransaction();
+        try {
+            $lokasi->update($request->only([
+                'nama_lokasi', 'jenis_lokasi', 'alamat', 'kapasitas',
+                'satuan_kapasitas', 'penanggung_jawab', 'no_telepon', 'status'
+            ]));
+
+            DB::commit();
+            return response()->json([
+                'success' => true,
+                'message' => 'Lokasi berhasil diupdate',
+                'data' => $lokasi
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function deleteAjax($id)
+    {
+        DB::beginTransaction();
+        try {
+            $lokasi = Lokasi::findOrFail($id);
+            
+            if ($lokasi->distribusiDetails()->exists()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Lokasi tidak dapat dihapus karena memiliki data distribusi.'
+                ], 422);
+            }
+            
+            $lokasi->delete();
+            DB::commit();
+            return response()->json(['success' => true, 'message' => 'Lokasi berhasil dihapus']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 }

@@ -13,14 +13,14 @@ return new class extends Migration
     {
         Schema::create('lokasi', function (Blueprint $table) {
             $table->char('id_lokasi', 5)->primary();
-            $table->string('nama_lokasi', 50);
+            $table->string('nama_lokasi', 50) ->unique();
             $table->enum('jenis_lokasi', ['gudang', 'toko']);
             $table->text('alamat')->nullable();
             // $table->decimal('kapasitas', 10, 2);
             $table->unsignedInteger('kapasitas');
             $table->string('satuan_kapasitas', 10);
-            $table->string('penanggung_jawab', 100);
-            $table->string('no_telepon', 15)->nullable();
+            $table->string('penanggung_jawab', 20)->unique();
+            $table->string('no_telepon', 15)->unique();
             $table->enum('status', ['aktif', 'non_aktif'])->default('aktif');
             $table->timestamps();
         });

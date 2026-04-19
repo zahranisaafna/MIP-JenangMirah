@@ -32,7 +32,8 @@
                 </div>
                 <div class="card-body">
                     <form action="{{ $isEdit ? route('setting-user.update', $user->id_user) : route('setting-user.store') }}" 
-                          method="POST">
+                          method="POST"
+                          id="formUser">
                         @csrf
                         @if($isEdit)
                             @method('PUT')
@@ -100,6 +101,29 @@
                             <div class="col-md-6 mb-3">
                                 <label for="password" class="form-label">
                                     Password 
+                                    @if(!$isEdit)<span class="text-danger">*</span>@endif
+                                </label>
+                                <div class="input-group">
+                                    <input type="password" 
+                                        class="form-control @error('password') is-invalid @enderror" 
+                                        id="password" 
+                                        name="password" 
+                                        placeholder="{{ $isEdit ? 'Kosongkan jika tidak ingin mengubah password' : 'Contoh: 1234 (minimal 4 karakter)' }}"
+                                        @if(!$isEdit) required @endif>
+                                    <button class="btn btn-outline-secondary" type="button" onclick="togglePw('password', 'icon-pw1')">
+                                        <i class="fas fa-eye" id="icon-pw1"></i>
+                                    </button>
+                                    @error('password')
+                                        <div class="invalid-feedback d-block">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                                @if($isEdit)
+                                    <small class="text-muted">Kosongkan jika tidak ingin mengubah password</small>
+                                @endif
+                            </div>
+                            {{-- <div class="col-md-6 mb-3">
+                                <label for="password" class="form-label">
+                                    Password 
                                     @if(!$isEdit)
                                         <span class="text-danger">*</span>
                                     @endif
@@ -116,10 +140,27 @@
                                 @error('password')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
-                            </div>
+                            </div> --}}
 
                             <!-- Password Confirmation -->
                             <div class="col-md-6 mb-3">
+                                <label for="password_confirmation" class="form-label">
+                                    Konfirmasi Password
+                                    @if(!$isEdit)<span class="text-danger">*</span>@endif
+                                </label>
+                                <div class="input-group">
+                                    <input type="password" 
+                                        class="form-control" 
+                                        id="password_confirmation" 
+                                        name="password_confirmation" 
+                                        placeholder="Contoh: 1234"
+                                        @if(!$isEdit) required @endif>
+                                    <button class="btn btn-outline-secondary" type="button" onclick="togglePw('password_confirmation', 'icon-pw2')">
+                                        <i class="fas fa-eye" id="icon-pw2"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            {{-- <div class="col-md-6 mb-3">
                                 <label for="password_confirmation" class="form-label">
                                     Konfirmasi Password
                                     @if(!$isEdit)
@@ -132,7 +173,7 @@
                                     name="password_confirmation" 
                                     placeholder="Contoh: 1234"
                                     @if(!$isEdit) required @endif>
-                            </div>
+                            </div> --}}
 
                             <!-- Role -->
                             <div class="col-md-6 mb-3">
@@ -170,11 +211,27 @@
                                     name="no_telepon" 
                                     value="{{ old('no_telepon', $user->no_telepon) }}" 
                                     placeholder="Contoh: 081234567890"
+                                    maxlength="15"
                                     required>
                                 @error('no_telepon')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
+                            {{-- <div class="col-md-6 mb-3">
+                                <label for="no_telepon" class="form-label">
+                                    No Telepon <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" 
+                                    class="form-control @error('no_telepon') is-invalid @enderror" 
+                                    id="no_telepon" 
+                                    name="no_telepon" 
+                                    value="{{ old('no_telepon', $user->no_telepon) }}" 
+                                    placeholder="Contoh: 081234567890"
+                                    required>
+                                @error('no_telepon')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div> --}}
 
                             <!-- Status -->
                             <div class="col-md-6 mb-3">
@@ -217,5 +274,58 @@
         </div>
     </div>
 </div>
+@push('scripts')
+<script>
+document.getElementById('formUser').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const form = this;
 
+    try {
+        const res = await fetch('{{ route("setting-user.check-duplicate") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({
+                username: document.getElementById('username').value,
+                email: document.getElementById('email').value,
+                no_telepon: document.getElementById('no_telepon').value,
+                exclude_id: '{{ $isEdit ? $user->id_user : "" }}'
+            })
+        });
+
+        const data = await res.json();
+
+        if (data.duplicates.length > 0) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Data Sudah Terdaftar!',
+                html: 'Field berikut sudah digunakan:<br><br><b>' + data.duplicates.join(', ') + '</b><br><br>Silakan gunakan data yang berbeda.',
+                confirmButtonText: 'Oke, Perbaiki'
+            });
+            return;
+        }
+
+        form.submit();
+
+    } catch (err) {
+        // Kalau AJAX gagal, langsung submit saja (fallback ke validasi Laravel)
+        form.submit();
+    }
+});
+// Toggle show/hide password
+function togglePw(inputId, iconId) {
+    const input = document.getElementById(inputId);
+    const icon = document.getElementById(iconId);
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.replace('fa-eye', 'fa-eye-slash');
+    } else {
+        input.type = 'password';
+        icon.classList.replace('fa-eye-slash', 'fa-eye');
+    }
+}
+</script>
+@endpush
 @endsection

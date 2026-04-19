@@ -144,7 +144,10 @@
                                         {{-- <td class="text-center text-nowrap">{{ $komposisi->id_komposisi }}</td> --}}
                                         <td class="text-center text-nowrap">{{ $komposisi->id_bahan_baku }}</td>
                                         <td class="text-nowrap">{{ $komposisi->nama_bahan }}</td>
-                                        <td class="text-center text-nowrap">{{ number_format($komposisi->jumlah_diperlukan) }}</td>
+                                        <td class="text-center text-nowrap">
+                                            {{ rtrim(rtrim(number_format($komposisi->jumlah_diperlukan, 2, ',', '.'), '0'), ',') }}
+                                        </td>
+                                        {{-- <td class="text-center text-nowrap">{{ number_format($komposisi->jumlah_diperlukan) }}</td> --}}
                                         <td class="text-center">{{ $komposisi->satuan }}</td>
                                         <td>
                                             <small>{{ $komposisi->keterangan ?? '-' }}</small>

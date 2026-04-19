@@ -95,9 +95,9 @@ class SupplierController extends Controller
     {
         $validated = $request->validate([
             'id_bahan_baku' => 'required|exists:bahan_baku,id_bahan_baku',
-            'nama_supplier' => 'required|string|max:20',
+            'nama_supplier' => 'required|string|max:20|unique:suppliers,nama_supplier',
             'alamat' => 'required|string',
-            'no_telepon' => 'required|string|max:15|regex:/^[0-9]+$/',
+            'no_telepon' => 'required|string|max:15|regex:/^[0-9]+$/|unique:suppliers,no_telepon',
             'kontak_person' => 'required|string|max:20',
             'status' => 'required|in:aktif,non_aktif',
         ], [
@@ -105,10 +105,12 @@ class SupplierController extends Controller
             'id_bahan_baku.exists' => 'Bahan baku tidak valid',
             'nama_supplier.required' => 'Nama supplier harus diisi',
             'nama_supplier.max' => 'Nama supplier maksimal 20 karakter',
+            'nama_supplier.unique' => 'Nama supplier sudah digunakan',
             'alamat.required' => 'Alamat harus diisi',
             'no_telepon.required' => 'Nomor telepon harus diisi',
             'no_telepon.max' => 'Nomor telepon maksimal 15 digit',
             'no_telepon.regex' => 'Nomor telepon hanya boleh berisi angka',
+            'no_telepon.unique' => 'Nomor telepon sudah digunakan',
             'kontak_person.required' => 'Kontak person harus diisi',
             'kontak_person.max' => 'Kontak person maksimal 20 karakter',
             'status.required' => 'Status harus dipilih',
@@ -131,10 +133,10 @@ class SupplierController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
-    {
-        //
-    }
+    // public function show(string $id)
+    // {
+    //     //
+    // }
 
     /**
      * Show the form for editing the specified resource.
@@ -167,9 +169,9 @@ class SupplierController extends Controller
     {
         $validated = $request->validate([
             'id_bahan_baku' => 'required|exists:bahan_baku,id_bahan_baku',
-            'nama_supplier' => 'required|string|max:20',
+            'nama_supplier' => 'required|string|max:20|unique:suppliers,nama_supplier,' . $id . ',id_supplier',
             'alamat' => 'required|string',
-            'no_telepon' => 'required|string|max:15|regex:/^[0-9]+$/',
+            'no_telepon' => 'required|string|max:15|regex:/^[0-9]+$/|unique:suppliers,no_telepon,' . $id . ',id_supplier',
             'kontak_person' => 'required|string|max:20',
             'status' => 'required|in:aktif,non_aktif',
         ], [
@@ -177,10 +179,12 @@ class SupplierController extends Controller
             'id_bahan_baku.exists' => 'Bahan baku tidak valid',
             'nama_supplier.required' => 'Nama supplier harus diisi',
             'nama_supplier.max' => 'Nama supplier maksimal 20 karakter',
+            'nama_supplier.unique' => 'Nama supplier sudah digunakan',
             'alamat.required' => 'Alamat harus diisi',
             'no_telepon.required' => 'Nomor telepon harus diisi',
-            'no_telepon.max' => 'Nomor telepon maksimal 12 digit',
+            'no_telepon.max' => 'Nomor telepon maksimal 15 digit',
             'no_telepon.regex' => 'Nomor telepon hanya boleh berisi angka',
+            'no_telepon.unique' => 'Nomor telepon sudah digunakan',
             'kontak_person.required' => 'Kontak person harus diisi',
             'kontak_person.max' => 'Kontak person maksimal 20 karakter',
             'status.required' => 'Status harus dipilih',
@@ -243,5 +247,24 @@ class SupplierController extends Controller
         $newNumber = $lastNumber + 1;
 
         return 'SUP' . str_pad($newNumber, 2, '0', STR_PAD_LEFT);
+    }
+    public function checkDuplicate(Request $request)
+    {
+        $excludeId = $request->input('exclude_id');
+        $duplicates = [];
+
+        if ($request->nama_supplier) {
+            $query = DB::table('suppliers')->where('nama_supplier', $request->nama_supplier);
+            if ($excludeId) $query->where('id_supplier', '!=', $excludeId);
+            if ($query->exists()) $duplicates[] = 'Nama Supplier';
+        }
+
+        if ($request->no_telepon) {
+            $query = DB::table('suppliers')->where('no_telepon', $request->no_telepon);
+            if ($excludeId) $query->where('id_supplier', '!=', $excludeId);
+            if ($query->exists()) $duplicates[] = 'No. Telepon';
+        }
+
+        return response()->json(['duplicates' => $duplicates]);
     }
 }

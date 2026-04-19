@@ -47,12 +47,15 @@ Route::middleware('auth')->group(function () {
         
         // User Management Routes
         Route::resource('setting-user', UserSettingController::class)->except(['show']);
+        Route::post('/setting-user/check-duplicate', [UserSettingController::class, 'checkDuplicate'])->name('setting-user.check-duplicate');
         
         // Bahan Baku Routes 
         Route::resource('bahan-baku', BahanBakuController::class);
+        Route::post('bahan-baku/check-duplicate', [BahanBakuController::class, 'checkDuplicate'])->name('bahan-baku.check-duplicate');
 
         // Supplier Routes
         Route::resource('supplier', SupplierController::class);
+        Route::post('supplier/check-duplicate', [SupplierController::class, 'checkDuplicate'])->name('supplier.check-duplicate');
 
         // Pembelian Routes
         Route::delete('pembelian/detail/{id}', [PembelianController::class, 'deleteDetail'])->name('pembelian.detail.delete');
@@ -62,6 +65,7 @@ Route::middleware('auth')->group(function () {
         Route::post('resep/{idResep}/komposisi', [ResepController::class, 'storeKomposisi'])->name('resep.komposisi.store');
         Route::delete('resep/komposisi/{idKomposisi}', [ResepController::class, 'deleteKomposisi'])->name('resep.komposisi.delete');
         Route::resource('resep', ResepController::class);
+        Route::post('resep/check-duplicate', [ResepController::class, 'checkDuplicate'])->name('resep.check-duplicate');
     });
     
     // Dashboard untuk Karyawan Produksi
@@ -92,6 +96,8 @@ Route::middleware('auth')->group(function () {
 
         // Route AJAX untuk tambah lokasi dari modal
         Route::post('/lokasi/store-ajax', [LokasiController::class, 'storeAjax'])->name('lokasi.store.ajax');
+        Route::put('/lokasi/{id}/update-ajax', [LokasiController::class, 'updateAjax'])->name('lokasi.update.ajax');
+        Route::delete('/lokasi/{id}/delete-ajax', [LokasiController::class, 'deleteAjax'])->name('lokasi.delete.ajax');
 
         // Route resource untuk lokasi (opsional jika ingin CRUD penuh)
         Route::resource('lokasi', LokasiController::class);

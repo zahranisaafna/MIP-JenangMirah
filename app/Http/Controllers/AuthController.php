@@ -41,17 +41,7 @@ class AuthController extends Controller
             return back()->withErrors(['username' => 'Username tidak ditemukan atau akun tidak aktif'])
                          ->withInput($request->only('username'));
         }
-
-        $credentials = [
-            'username' => $request->username,
-            'password' => $request->password,
-            'status'   => 'aktif',
-        ];
-
-        // Remember me untuk session
-        $remember = $request->boolean('remember');
-
-        if (Auth::attempt($credentials, $remember)) {
+        if (Auth::attempt(['username' => $request->username, 'password' => $request->password])) {
             $request->session()->regenerate();
             
             // Return success response untuk AJAX
@@ -66,6 +56,29 @@ class AuthController extends Controller
             
             return $this->redirectBasedOnRole(Auth::user()->role);
         }
+        // $credentials = [
+        //     'username' => $request->username,
+        //     'password' => $request->password,
+        //     'status'   => 'aktif',
+        // ];
+
+        // // Remember me untuk session
+        // $remember = $request->boolean('remember');
+
+        // if (Auth::attempt($credentials, $remember)) {
+        //     $request->session()->regenerate(); 
+            // Return success response untuk AJAX
+        //     if ($request->ajax() || $request->wantsJson()) {
+        //         return response()->json([
+        //             'success' => true,
+        //             'message' => 'Login berhasil!',
+        //             'role' => Auth::user()->role,
+        //             'redirect' => $this->getRedirectUrl(Auth::user()->role)
+        //         ]);
+        //     }
+            
+        //     return $this->redirectBasedOnRole(Auth::user()->role);
+        // }
 
         // Return error response untuk AJAX
         if ($request->ajax() || $request->wantsJson()) {

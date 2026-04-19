@@ -42,7 +42,7 @@
                         : route('bahan-baku.store');
                 @endphp
                 
-                <form action="{{ $formAction }}" method="POST">
+                <form action="{{ $formAction }}" method="POST" id="formBahanBaku">
                     @csrf
                     @if($isEdit)
                         @method('PUT')
@@ -243,6 +243,41 @@ document.addEventListener('DOMContentLoaded', function () {
         allowInput: true
         // defaultDate tidak wajib, flatpickr otomatis baca dari value=""
     });
+});
+document.getElementById('formBahanBaku').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const form = this;
+
+    try {
+        const res = await fetch('{{ route("bahan-baku.check-duplicate") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({
+                nama_bahan: document.getElementById('nama_bahan').value,
+                exclude_id: '{{ $isEdit ? $bahanBaku->id_bahan_baku : "" }}'
+            })
+        });
+
+        const data = await res.json();
+
+        if (data.duplicates.length > 0) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Data Sudah Terdaftar!',
+                html: 'Field berikut sudah digunakan:<br><br><b>' + data.duplicates.join(', ') + '</b><br><br>Silakan gunakan data yang berbeda.',
+                confirmButtonText: 'Oke, Perbaiki'
+            });
+            return;
+        }
+
+        form.submit();
+
+    } catch (err) {
+        form.submit();
+    }
 });
 </script>
 @endpush

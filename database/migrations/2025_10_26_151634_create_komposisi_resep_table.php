@@ -16,7 +16,7 @@ return new class extends Migration
             $table->char('id_resep', 5);
             $table->char('id_bahan_baku', 5);
             // $table->decimal('jumlah_diperlukan', 10, 2);
-            $table->unsignedInteger('jumlah_diperlukan');
+            $table->decimal('jumlah_diperlukan', 10, 2);
             $table->string('satuan', 5);
             $table->text('keterangan')->nullable();
             $table->timestamps();

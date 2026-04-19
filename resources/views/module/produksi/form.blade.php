@@ -7,6 +7,12 @@
         color: inherit !important;
         cursor: pointer !important;
     }
+    .input-final-locked {
+        background-color: #e9ecef !important;
+        color: #6c757d !important;
+        cursor: not-allowed !important;
+        pointer-events: none;
+    }
 </style>
 
 <div class="content-wrapper">
@@ -40,11 +46,17 @@
 
             @php
                 $isEdit = isset($produksi) && !empty($produksi->id_produksi);
+                $isSelesai = $isEdit && $produksi->status === 'selesai';
                 $formAction = $isEdit 
                     ? route('produksi.update', $produksi->id_produksi) 
                     : route('produksi.store');
             @endphp
-
+            @if($isSelesai)
+                <div class="alert alert-info d-flex align-items-center mb-3" role="alert">
+                    <i class="fas fa-lock mr-2"></i>
+                    <span>Produksi ini telah <strong>selesai</strong>. Data tidak dapat diubah lagi untuk mencegah kesalahan input.</span>
+                </div>
+            @endif
             <form action="{{ $formAction }}" method="POST" id="formProduksi">
                 @csrf
                 @if($isEdit)
@@ -77,13 +89,13 @@
                                 <div class="form-group">
                                     <label for="waktu_mulai">Waktu Mulai <span class="text-danger">*</span></label>
                                     <input type="text" 
-                                        class="form-control @error('waktu_mulai') is-invalid @enderror" 
+                                        class="form-control @error('waktu_mulai') is-invalid @enderror {{ $isSelesai ? 'input-final-locked' : '' }}" 
                                         id="waktu_mulai" 
                                         name="waktu_mulai" 
                                         {{-- value="{{ old('waktu_mulai', !empty($produksi->waktu_mulai) ? $produksi->waktu_mulai : date('H:i:s')) }}"
                                         {{ $isEdit ? 'readonly' : 'required' }}> --}}
-                                        value="{{ old('waktu_mulai', !empty($produksi->waktu_mulai) ? $produksi->waktu_mulai : date('H:i:s')) }}"
-                                        required>
+                                        value="{{ old('waktu_mulai', !empty($produksi->waktu_mulai) ? $produksi->waktu_mulai : date('H:i:s'))}}"
+                                        {{ $isSelesai ? 'readonly' : 'required' }}>
                                     <small class="text-muted">Gunakan format 24 jam (contoh: 14:30:00)</small>
 
                                     @error('waktu_mulai')
@@ -96,10 +108,11 @@
                                 <div class="form-group">
                                     <label for="waktu_selesai">Waktu Selesai</label>
                                     <input type="text" 
-                                        class="form-control @error('waktu_selesai') is-invalid @enderror" 
+                                        class="form-control @error('waktu_selesai') is-invalid @enderror {{ $isSelesai ? 'input-final-locked' : '' }}" 
                                         id="waktu_selesai" 
                                         name="waktu_selesai" 
-                                        value="{{ old('waktu_selesai', $produksi->waktu_selesai) }}">
+                                        value="{{ old('waktu_selesai', $produksi->waktu_selesai) }}"
+                                                {{ $isSelesai ? 'readonly' : 'required' }}>
                                     <small class="text-muted">Format 24 jam (contoh: 16:45:00)</small>
 
                                     @error('waktu_selesai')
@@ -175,11 +188,11 @@
                             <div class="col-md-{{ $isEdit ? 4 : 8 }}">
                                 <div class="form-group">
                                     <label for="catatan">Catatan</label>
-                                    <textarea class="form-control @error('catatan') is-invalid @enderror" 
+                                    <textarea class="form-control @error('catatan') is-invalid @enderror {{ $isSelesai ? 'input-final-locked' : '' }}" 
                                             id="catatan" 
                                             name="catatan" 
                                             rows="2"
-                                            placeholder="Contoh: Proses Produksi Jenang Ketan (opsional)">{{ old('catatan', $produksi->catatan ?? '') }}</textarea>
+                                            placeholder="Contoh: Proses Produksi Jenang Ketan (opsional)" {{ $isSelesai ? 'readonly' : '' }}>{{ old('catatan', $produksi->catatan ?? '') }}</textarea>
                                     @error('catatan')
                                         <span class="invalid-feedback">{{ $message }}</span>
                                     @enderror
@@ -234,6 +247,11 @@
                 <div class="card">
                     <div class="card-header">
                         <h5 class="card-title">Memperbarui rincian produksi sesuai dengan komposisi Produk</h5>
+                         @if($isSelesai)
+                            <span class="badge badge-info badge-final-info">
+                                <i class="fas fa-lock mr-1"></i> Data Terkunci — Produksi Selesai
+                            </span>
+                        @endif
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">
@@ -258,15 +276,21 @@
                                         <td>
                                             <input type="hidden" name="detail[{{ $loop->index }}][id_detail_produksi]" value="{{ $detail->id_detail_produksi }}">
                                             <input type="number" name="detail[{{ $loop->index }}][jumlah_berhasil]" 
-                                                   class="form-control form-control-sm inputBerhasilEdit" 
+                                                   class="form-control form-control-sm inputBerhasilEdit {{ $isSelesai ? 'input-final-locked' : '' }}" 
                                                    value="{{ $detail->jumlah_berhasil }}" 
-                                                   min="0" required>
+                                                   min="0" {{ $isSelesai ? 'disabled readonly' : 'required' }}>
+                                            @if($isSelesai)
+                                                <input type="hidden" name="detail[{{ $loop->index }}][jumlah_berhasil]" value="{{ $detail->jumlah_berhasil }}">
+                                            @endif
                                         </td>
                                         <td>
                                             <input type="number" name="detail[{{ $loop->index }}][jumlah_gagal]" 
-                                                   class="form-control form-control-sm inputGagalEdit" 
+                                                   class="form-control form-control-sm inputGagalEdit {{ $isSelesai ? 'input-final-locked' : '' }}" 
                                                    value="{{ $detail->jumlah_gagal }}" 
-                                                   min="0" required>
+                                                   min="0" {{ $isSelesai ? 'disabled readonly' : 'required' }}>
+                                            @if($isSelesai)
+                                                <input type="hidden" name="detail[{{ $loop->index }}][jumlah_gagal]" value="{{ $detail->jumlah_gagal }}">
+                                            @endif
                                         </td>
                                         <td class="text-center">
                                             <span class="badge {{ $detail->persentase_keberhasilan >= 80 ? 'badge-success' : ($detail->persentase_keberhasilan >= 50 ? 'badge-warning' : 'badge-danger') }}">
@@ -275,8 +299,12 @@
                                         </td>
                                         <td>
                                             <textarea name="detail[{{ $loop->index }}][keterangan_gagal]" 
+                                                    class="form-control form-control-sm {{ $isSelesai ? 'input-final-locked' : '' }}" 
+                                                    rows="1"
+                                                    {{ $isSelesai ? 'readonly' : '' }}>{{ $detail->keterangan_gagal }}</textarea>
+                                            {{-- <textarea name="detail[{{ $loop->index }}][keterangan_gagal]" 
                                                       class="form-control form-control-sm" 
-                                                      rows="1">{{ $detail->keterangan_gagal }}</textarea>
+                                                      rows="1"{{ $isSelesai ? 'readonly' : '' }}>{{ $detail->keterangan_gagal }}</textarea> --}}
                                         </td>
                                     </tr>
                                     @endforeach
@@ -287,7 +315,21 @@
                 </div>          
                 @endif
 
-                <div class="card">
+                <div class="card-footer">
+                    @if(!$isSelesai)
+                        <button type="submit" class="btn btn-primary" id="btnSubmit">
+                            <i class="fas fa-save"></i> Simpan
+                        </button>
+                    @else
+                        <button type="button" class="btn btn-primary" disabled title="Produksi sudah selesai, tidak dapat disimpan ulang">
+                            <i class="fas fa-lock"></i> Data Terkunci
+                        </button>
+                    @endif
+                    <a href="{{ route('produksi.index') }}" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Batal
+                    </a>
+                </div>
+                {{-- <div class="card">
                     <div class="card-footer">
                         <button type="submit" class="btn btn-primary" id="btnSubmit">
                             <i class="fas fa-save"></i> Simpan
@@ -296,7 +338,7 @@
                             <i class="fas fa-times"></i> Batal
                         </a>
                     </div>
-                </div>
+                </div> --}}
             </form>
         </div>
     </section>
@@ -420,29 +462,52 @@ document.addEventListener('DOMContentLoaded', function () {
         allowInput: false,
     });
 
-    // Waktu Mulai - format 24 jam, simpan HH:mm:ss
-    flatpickr("#waktu_mulai", {
-        enableTime: true,
-        noCalendar: true,
-        dateFormat: "H:i:S",   // value ke server -> 14:30:00
-        altInput: true,
-        altFormat: "H:i:S",    // tampilan di input -> 14:30:00
-        time_24hr: true,
-        defaultDate: "{{ old('waktu_mulai', !empty($produksi->waktu_mulai) ? $produksi->waktu_mulai : date('H:i:s')) }}",
-    });
+    if (!isSelesai) {
+        flatpickr("#waktu_mulai", {
+            enableTime: true,
+            noCalendar: true,
+            dateFormat: "H:i:S",
+            altInput: true,
+            altFormat: "H:i:S",
+            time_24hr: true,
+            defaultDate: "{{ old('waktu_mulai', !empty($produksi->waktu_mulai) ? $produksi->waktu_mulai : date('H:i:s')) }}",
+        });
 
-    // Waktu Selesai (hanya muncul di edit)
-    flatpickr("#waktu_selesai", {
-        enableTime: true,
-        noCalendar: true,
-        dateFormat: "H:i:S",
-        altInput: true,
-        altFormat: "H:i:S",
-        time_24hr: true,
-        @if(!empty($produksi->waktu_selesai))
-        defaultDate: "{{ old('waktu_selesai', $produksi->waktu_selesai) }}",
-        @endif
-    });
+        flatpickr("#waktu_selesai", {
+            enableTime: true,
+            noCalendar: true,
+            dateFormat: "H:i:S",
+            altInput: true,
+            altFormat: "H:i:S",
+            time_24hr: true,
+            @if(!empty($produksi->waktu_selesai))
+            defaultDate: "{{ old('waktu_selesai', $produksi->waktu_selesai) }}",
+            @endif
+        });
+    }
+    // // Waktu Mulai - format 24 jam, simpan HH:mm:ss
+    // flatpickr("#waktu_mulai", {
+    //     enableTime: true,
+    //     noCalendar: true,
+    //     dateFormat: "H:i:S",   // value ke server -> 14:30:00
+    //     altInput: true,
+    //     altFormat: "H:i:S",    // tampilan di input -> 14:30:00
+    //     time_24hr: true,
+    //     defaultDate: "{{ old('waktu_mulai', !empty($produksi->waktu_mulai) ? $produksi->waktu_mulai : date('H:i:s')) }}",
+    // });
+
+    // // Waktu Selesai (hanya muncul di edit)
+    // flatpickr("#waktu_selesai", {
+    //     enableTime: true,
+    //     noCalendar: true,
+    //     dateFormat: "H:i:S",
+    //     altInput: true,
+    //     altFormat: "H:i:S",
+    //     time_24hr: true,
+    //     @if(!empty($produksi->waktu_selesai))
+    //     defaultDate: "{{ old('waktu_selesai', $produksi->waktu_selesai) }}",
+    //     @endif
+    // });
 
 });
 
@@ -451,6 +516,7 @@ let rowIndex = 0;
 const resepList = @json($resepList);
 const produkList = @json($produkList);
 const isEdit = {{ $isEdit ? 'true' : 'false' }};
+const isSelesai = {{ $isSelesai ? 'true' : 'false' }};
 let selectProdukAktif = null;
 
 $(document).ready(function() {
@@ -652,6 +718,11 @@ $(document).ready(function() {
     });
     
     $('#formProduksi').submit(function(e) {
+        if (isSelesai) {
+            e.preventDefault();
+            alert('Produksi sudah selesai dan tidak dapat diubah lagi.');
+            return false;
+        }
         @if(!$isEdit)
         const rowCount = $('#detailContainer tr').length;
         

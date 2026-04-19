@@ -78,6 +78,75 @@
 
     <!-- Stats Cards -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+
+        <!-- Produksi dalam periode -->
+        <div class="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-500 mb-1">Produksi (Periode)</p>
+                    <h3 class="text-3xl font-bold text-gray-900">{{ number_format($statistik['total_produksi']) }}</h3>
+                    <p class="text-xs text-gray-400 mt-1">{{ $startDate }} s/d {{ $endDate }}</p>
+                    <p class="text-sm text-green-600 mt-1 flex items-center gap-1">
+                        <i class="fas fa-arrow-up"></i><span>Unit</span>
+                    </p>
+                </div>
+                <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                    <i class="fas fa-industry text-blue-600 text-xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Distribusi dalam periode -->
+        <div class="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-500 mb-1">Distribusi (Periode)</p>
+                    <h3 class="text-3xl font-bold text-gray-900">{{ number_format($statistik['total_distribusi']) }}</h3>
+                    <p class="text-xs text-gray-400 mt-1">{{ $startDate }} s/d {{ $endDate }}</p>
+                    <p class="text-sm text-green-600 mt-1 flex items-center gap-1">
+                        <i class="fas fa-arrow-up"></i><span>Transaksi</span>
+                    </p>
+                </div>
+                <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                    <i class="fas fa-truck text-green-600 text-xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hari aktif produksi -->
+        <div class="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-500 mb-1">Hari Aktif Produksi</p>
+                    <h3 class="text-3xl font-bold text-gray-900">{{ number_format($statistik['hari_produksi']) }}</h3>
+                    <p class="text-sm text-blue-600 mt-2 flex items-center gap-1">
+                        <i class="fas fa-calendar"></i><span>Hari</span>
+                    </p>
+                </div>
+                <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                    <i class="fas fa-calendar-check text-purple-600 text-xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hari aktif distribusi -->
+        <div class="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-500 mb-1">Hari Aktif Distribusi</p>
+                    <h3 class="text-3xl font-bold text-gray-900">{{ number_format($statistik['hari_distribusi']) }}</h3>
+                    <p class="text-sm text-orange-600 mt-2 flex items-center gap-1">
+                        <i class="fas fa-shipping-fast"></i><span>Hari</span>
+                    </p>
+                </div>
+                <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
+                    <i class="fas fa-box text-orange-600 text-xl"></i>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    {{-- <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <!-- Total Produksi -->
         <div class="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow duration-200">
             <div class="flex items-center justify-between">
@@ -145,7 +214,7 @@
                 </div>
             </div>
         </div>
-    </div>
+    </div> --}}
 
     <!-- Charts Row -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
@@ -209,6 +278,26 @@
                 <h4 class="text-2xl font-bold text-gray-900">{{ number_format($statistik['total_lokasi']) }}</h4>
             </div>
             <div class="text-center p-4 bg-gray-50 rounded-xl">
+                <p class="text-sm text-gray-500 mb-2">Rata-rata Produksi/Hari</p>
+                <h4 class="text-2xl font-bold text-gray-900">{{ number_format($statistik['rata_produksi']) }}</h4>
+                <p class="text-xs text-gray-400 mt-1">dari {{ $statistik['hari_produksi'] }} hari aktif</p>
+            </div>
+            <div class="text-center p-4 bg-gray-50 rounded-xl">
+                <p class="text-sm text-gray-500 mb-2">Rata-rata Distribusi/Hari</p>
+                <h4 class="text-2xl font-bold text-gray-900">{{ number_format($statistik['rata_distribusi']) }}</h4>
+                <p class="text-xs text-gray-400 mt-1">dari {{ $statistik['hari_distribusi'] }} hari aktif</p>
+            </div>
+        </div>
+        {{-- <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div class="text-center p-4 bg-gray-50 rounded-xl">
+                <p class="text-sm text-gray-500 mb-2">Total Produk</p>
+                <h4 class="text-2xl font-bold text-gray-900">{{ number_format($statistik['total_produk']) }}</h4>
+            </div>
+            <div class="text-center p-4 bg-gray-50 rounded-xl">
+                <p class="text-sm text-gray-500 mb-2">Total Lokasi</p>
+                <h4 class="text-2xl font-bold text-gray-900">{{ number_format($statistik['total_lokasi']) }}</h4>
+            </div>
+            <div class="text-center p-4 bg-gray-50 rounded-xl">
                 <p class="text-sm text-gray-500 mb-2">Rata-rata Produksi</p>
                 <h4 class="text-2xl font-bold text-gray-900">
                     {{ $statistik['total_produksi'] > 0 ? number_format($statistik['produksi_bulan_ini'] / date('d')) : 0 }}
@@ -220,7 +309,7 @@
                     {{ $statistik['total_distribusi'] > 0 ? number_format($statistik['distribusi_bulan_ini'] / date('d')) : 0 }}
                 </h4>
             </div>
-        </div>
+        </div> --}}
     </div>
 </div>
 @endsection

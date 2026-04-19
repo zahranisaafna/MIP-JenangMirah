@@ -372,7 +372,7 @@ class ProduksiController extends Controller
 
             DB::commit();
             return redirect()->route('produksi.show', $idProduksi)
-                ->with('success', 'Produksi berhasil dibuat. Stok bahan baku telah dikurangi.');
+                ->with('success', 'Data Produksi berhasil dibuat dengan status proses. ');
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -507,10 +507,19 @@ class ProduksiController extends Controller
                     $totalProdukDihasilkan += $baru;
 
                     // 🧱 UPDATE STOK PRODUK HANYA JIKA SELESAI
-                    if ($statusBaru === 'selesai') {
+                    // if ($statusBaru === 'selesai') {
+                    //     $produk = Produk::find($detail->id_produk);
+                    //     if ($produk) {
+                    //         $produk->stok_tersedia += ($baru - $lama);
+                    //         $produk->stok_tersedia = max(0, $produk->stok_tersedia);
+                    //         $produk->status = $produk->stok_tersedia > 0 ? 'tersedia' : 'habis';
+                    //         $produk->save();
+                    //     }
+                    // }
+                    if ($statusLama !== 'selesai' && $statusBaru === 'selesai') {
                         $produk = Produk::find($detail->id_produk);
                         if ($produk) {
-                            $produk->stok_tersedia += ($baru - $lama);
+                            $produk->stok_tersedia += $baru; // pakai $baru langsung, bukan selisih
                             $produk->stok_tersedia = max(0, $produk->stok_tersedia);
                             $produk->status = $produk->stok_tersedia > 0 ? 'tersedia' : 'habis';
                             $produk->save();
@@ -574,7 +583,7 @@ class ProduksiController extends Controller
 
             DB::commit();
             return redirect()->route('produksi.show', $id)
-                ->with('success', 'Produksi berhasil diperbarui.');
+                ->with('success', 'Produksi berhasil diperbarui. Stok bahan baku telah dikurangi.');
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()
@@ -904,7 +913,11 @@ class ProduksiController extends Controller
             'satuan' => 'required|string|max:3',
             'stok_minimum' => 'required|integer|min:0',
             'deskripsi' => 'nullable|string',
-        ]);
+        ],
+        [
+            'nama_produk.unique' => 'Produk dengan nama tersebut sudah ada!',
+        ]
+        );
 
         try {
             // Cek apakah produk sudah ada
@@ -976,6 +989,9 @@ class ProduksiController extends Controller
             'satuan' => 'required|string|max:10',
             'stok_minimum' => 'required|integer|min:0',
             'deskripsi' => 'nullable|string',
+        ], 
+        [
+            'nama_produk.unique' => 'Produk dengan nama tersebut sudah ada!',
         ]);
 
         $produk->update([

@@ -10,7 +10,7 @@
                 <h3 class="mb-sm-0">Detail Distribusi</h3>
                 <div class="page-title-right">
                     <ol class="breadcrumb m-0">
-                        <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Beranda</a></li>
+                        <li class="breadcrumb-item"><a href="{{ route('produksi.dashboard') }}">Beranda</a></li>
                         <li class="breadcrumb-item"><a href="{{ route('distribusi.index') }}">Distribusi</a></li>
                         <li class="breadcrumb-item active">Detail</li>
                     </ol>
@@ -41,10 +41,16 @@
             <div class="card mb-2">
                 <div class="card-header py-2">
                     <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">Data terkait tanggal dan status distribusi produk</h5>
-                        <a href="{{ route('distribusi.index') }}" class="btn btn-secondary btn-sm">
-                            <i class="fas fa-arrow-left"></i> Kembali
-                        </a>
+                        <h5 class="mb-0">Data terkait tanggal, jenis, dan status distribusi produk</h5>
+                        <div class="d-flex gap-2">
+                            <a href="{{ route('distribusi.edit', $distribusi->id_distribusi) }}" 
+                            class="btn btn-warning btn-sm">
+                                <i class="fas fa-edit"></i> Edit
+                            </a>                        
+                            <a href="{{ route('distribusi.index') }}" class="btn btn-secondary btn-sm">
+                                <i class="fas fa-arrow-left"></i> Kembali
+                            </a>
+                        </div>
                     </div>
                 </div>
                 <div class="card-body py-2">

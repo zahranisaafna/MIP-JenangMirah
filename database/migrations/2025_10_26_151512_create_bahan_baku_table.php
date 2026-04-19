@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('bahan_baku', function (Blueprint $table) {
             $table->char('id_bahan_baku', 5)->primary();
-            $table->string('nama_bahan', 20);
+            $table->string('nama_bahan', 20) ->unique();
             $table->string('kategori', 15);
             $table->string('satuan', 10);
             // $table->decimal('stok_minimum', 10, 2);

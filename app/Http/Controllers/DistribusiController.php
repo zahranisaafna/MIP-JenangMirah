@@ -68,9 +68,10 @@ class DistribusiController extends Controller
     public function create()
     {
         $lokasi = Lokasi::where('status', 'aktif')->get();
-        $produk = Produk::where('status', 'tersedia')
-            ->where('stok_tersedia', '>', 0)
-            ->get();
+        $produk = Produk::whereIn('status', ['tersedia', 'habis'])->get();
+        // $produk = Produk::where('status', 'tersedia')
+        //     ->where('stok_tersedia', '>', 0)
+        //     ->get();
 
         return view('module.distribusi.form', compact('lokasi', 'produk'));
     }
@@ -211,8 +212,10 @@ class DistribusiController extends Controller
             }
 
             DB::commit();
+            // return redirect()->route('distribusi.show', $idDistribusi)
+            //     ->with('success', 'Distribusi berhasil dibuat. Stok produk telah dikurangi.');
             return redirect()->route('distribusi.show', $idDistribusi)
-                ->with('success', 'Distribusi berhasil dibuat. Stok produk telah dikurangi.');
+                ->with('success', 'Distribusi berhasil dibuat dengan status pending.');
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -247,94 +250,188 @@ class DistribusiController extends Controller
             'distribusiDetails.user',
         ])->findOrFail($id);
 
-        // Hanya bisa edit jika status masih pending
-        // if ($distribusi->status !== 'pending') {
-        //     return redirect()->route('distribusi.show', $id)
-        //         ->with('error', 'Distribusi dengan status ' . $distribusi->status . ' tidak dapat diedit.');
-        // }
-        // 🔒 hanya batal yang benar-benar terkunci
-        if ($distribusi->status === 'batal') {
-            return redirect()->route('distribusi.show', $id)
-                ->with('error', 'Distribusi dengan status batal tidak dapat diedit.');
-        }
+        // Tidak redirect, buka form tapi tandai final
+        $isFinal = in_array($distribusi->status, ['selesai', 'batal']);
+
         $lokasi = Lokasi::where('status', 'aktif')->get();
         $produk = Produk::whereIn('status', ['tersedia', 'habis'])->get();
 
-        return view('module.distribusi.form', compact('distribusi', 'lokasi', 'produk'));
+        return view('module.distribusi.form', compact('distribusi', 'lokasi', 'produk', 'isFinal'));
     }
+    // public function edit($id)
+    // {
+    //     $distribusi = Distribusi::with([
+    //         'distribusiDetails.itemDistribusis.produk',
+    //         'distribusiDetails.lokasi',
+    //         'distribusiDetails.user',
+    //     ])->findOrFail($id);
+
+    //     // Hanya bisa edit jika status masih pending
+    //     // if ($distribusi->status !== 'pending') {
+    //     //     return redirect()->route('distribusi.show', $id)
+    //     //         ->with('error', 'Distribusi dengan status ' . $distribusi->status . ' tidak dapat diedit.');
+    //     // }
+    //     // 🔒 hanya batal yang benar-benar terkunci
+        
+    //     // if ($distribusi->status === 'batal') {
+    //     //     return redirect()->route('distribusi.show', $id)
+    //     //         ->with('error', 'Distribusi dengan status batal tidak dapat diedit.');
+    //     // }
+    //     if (in_array($distribusi->status, ['selesai', 'batal'])) {
+    //         return back()->with('error', 'Distribusi final tidak boleh dihapus.');
+    //     }
+    //     $lokasi = Lokasi::where('status', 'aktif')->get();
+    //     $produk = Produk::whereIn('status', ['tersedia', 'habis'])->get();
+
+    //     return view('module.distribusi.form', compact('distribusi', 'lokasi', 'produk'));
+    // }
 
     /**
      * Update the specified resource in storage.
      */
     public function update(Request $request, $id)
     {
-        // $distribusi = Distribusi::findOrFail($id);
         $distribusi = Distribusi::with('distribusiDetails.itemDistribusis.produk')
             ->findOrFail($id);
 
         $statusLama = $distribusi->status;
-        $statusBaru = $request->status ?? $statusLama;
-        // $statusBaru = $request->status;
+        $statusBaru = $request->input('status', $statusLama);
+
         $request->validate([
-            'tanggal_distribusi' => 'required|date',
-            'status' => 'required|in:pending,selesai,batal',
-            'keterangan' => 'nullable|string',
-            'detail' => 'required|array|min:1',
-            'detail.*.status_detail' => 'nullable|in:pending,diterima',
-            // 'detail.*.status_detail' => 'required|in:pending,diterima',
-            'detail.*.nama_penerima' => 'required|string|max:50',
-            'detail.*.catatan' => 'nullable|string',
+            'tanggal_distribusi'              => 'required|date',
+            'status'                          => 'required|in:pending,selesai,batal',
+            'keterangan'                      => 'nullable|string',
+            'detail'                          => 'required|array|min:1',
+            'detail.*.status_detail'          => 'nullable|in:pending,diterima',
+            'detail.*.tanggal_detail'         => 'required|date',
+            'detail.*.nama_penerima'          => 'required|string|max:50',
+            'detail.*.catatan'                => 'nullable|string',
+            'detail.*.items'                  => 'nullable|array',
+            'detail.*.items.*.id_item_distribusi' => 'nullable|string',
+            'detail.*.items.*.id_produk'      => 'required|exists:produk,id_produk',
+            'detail.*.items.*.jumlah'         => 'required|integer|min:1',
+            'detail.*.items.*.kondisi'        => 'required|in:baik,rusak,kadaluarsa',
+            'detail.*.items.*.keterangan'     => 'nullable|string',
         ]);
-        // FINAL LOCK (SAMA PRODUKSI)
+
+        // FINAL LOCK
         if (in_array($statusLama, ['selesai','batal']) && $statusBaru !== $statusLama) {
             return back()->with('error', 'Distribusi sudah final dan tidak dapat diubah.');
         }
+
         DB::beginTransaction();
         try {
-            // Update header distribusi
+            // Update header
             $dataUpdate = [
-                'keterangan' => $request->keterangan,
-                'tanggal_distribusi' => $request->tanggal_distribusi,
+                'keterangan'          => $request->keterangan,
+                'tanggal_distribusi'  => $request->tanggal_distribusi,
             ];
-
-            // hanya boleh ganti status kalau masih pending
             if ($statusLama === 'pending') {
                 $dataUpdate['status'] = $request->status;
             }
-
-            // tanggal BOLEH diubah walaupun selesai
-            $dataUpdate['tanggal_distribusi'] = $request->tanggal_distribusi;
-
             $distribusi->update($dataUpdate);
 
-
-            // Update detail distribusi
+            // Update detail
             foreach ($request->detail as $detailData) {
                 $detail = DistribusiDetail::find($detailData['id_distribusi_detail']);
+                if (!$detail) continue;
+
                 if ($detail->status_detail === 'pending') {
                     $detail->update([
-                        'status_detail' => $detailData['status_detail'] ?? 'pending',
-                        'nama_penerima' => $detailData['nama_penerima'],
-                        'catatan' => $detailData['catatan'],
+                        'tanggal_detail' => $detailData['tanggal_detail'],
+                        'status_detail'  => $detailData['status_detail'] ?? 'pending',
+                        'nama_penerima'  => $detailData['nama_penerima'],
+                        'catatan'        => $detailData['catatan'],
                     ]);
+
+                    // Update items jika status masih pending
+                    if ($statusLama === 'pending' && isset($detailData['items'])) {
+                        // Ambil ID item yang dikirim
+                        $submittedItemIds = collect($detailData['items'])
+                            ->pluck('id_item_distribusi')
+                            ->filter()
+                            ->values();
+
+                        // Hapus item yang tidak ada di submitted
+                        $detail->itemDistribusis()
+                            ->whereNotIn('id_item_distribusi', $submittedItemIds)
+                            ->delete();
+
+                        // Generator ID Item
+                        $lastItem = ItemDistribusi::orderBy('id_item_distribusi', 'desc')->first();
+                        $nextItemNumber = $lastItem
+                            ? intval(substr($lastItem->id_item_distribusi, 3)) + 1
+                            : 1;
+
+                        foreach ($detailData['items'] as $itemData) {
+                            $produk = Produk::find($itemData['id_produk']);
+
+                            if (!empty($itemData['id_item_distribusi'])) {
+                                // Update item existing
+                                $item = ItemDistribusi::find($itemData['id_item_distribusi']);
+                                if ($item) {
+                                    $item->update([
+                                        'id_produk'   => $itemData['id_produk'],
+                                        'jumlah'      => $itemData['jumlah'],
+                                        'satuan'      => $produk->satuan,
+                                        'kondisi'     => $itemData['kondisi'],
+                                        'keterangan'  => $itemData['keterangan'] ?? null,
+                                    ]);
+                                }
+                            } else {
+                                // Buat item baru
+                                $idItem = 'IDS' . str_pad($nextItemNumber, 5, '0', STR_PAD_LEFT);
+                                $nextItemNumber++;
+
+                                ItemDistribusi::create([
+                                    'id_item_distribusi'  => $idItem,
+                                    'id_distribusi_detail'=> $detail->id_distribusi_detail,
+                                    'id_produk'           => $itemData['id_produk'],
+                                    'jumlah'              => $itemData['jumlah'],
+                                    'satuan'              => $produk->satuan,
+                                    'kondisi'             => $itemData['kondisi'],
+                                    'keterangan'          => $itemData['keterangan'] ?? null,
+                                ]);
+                            }
+                        }
+                    }
                 } else {
-                    // status_detail diterima → LOCK
+                    // status_detail diterima → lock, hanya boleh update catatan & nama
                     $detail->update([
                         'nama_penerima' => $detailData['nama_penerima'],
-                        'catatan' => $detailData['catatan'],
+                        'catatan'       => $detailData['catatan'],
                     ]);
                 }
-                // if ($detail) {
-                //     $detail->update([
-                //         'status_detail' => $detailData['status_detail'],
-                //         'nama_penerima' => $detailData['nama_penerima'],
-                //         'catatan' => $detailData['catatan'],
-                //     ]);
-                // }
             }
-            // 🔥 POTONG STOK SEKALI SAAT pending → selesai
+
+            // Potong stok sekali saat pending → selesai
             if ($statusLama === 'pending' && $statusBaru === 'selesai') {
-                foreach ($distribusi->distribusiDetails as $detail) {
+                // Cek stok dulu sebelum potong
+                $distribusiSegar = Distribusi::with('distribusiDetails.itemDistribusis.produk')
+                    ->findOrFail($id);
+                $pesanError = [];
+                foreach ($distribusiSegar->distribusiDetails as $detail) {
+                    foreach ($detail->itemDistribusis as $item) {
+                        $produk = $item->produk;
+                        if ($produk->stok_tersedia < $item->jumlah) {
+                            $pesanError[] = sprintf(
+                                '%s: Stok tersedia %d %s, diminta %d %s',
+                                $produk->nama_produk,
+                                $produk->stok_tersedia,
+                                $produk->satuan,
+                                $item->jumlah,
+                                $produk->satuan
+                            );
+                        }
+                    }
+                }
+                if (!empty($pesanError)) {
+                    DB::rollBack();
+                    return back()->withInput()
+                        ->with('error', 'Stok tidak mencukupi:<br>' . implode('<br>', $pesanError));
+                }
+
+                foreach ($distribusiSegar->distribusiDetails as $detail) {
                     foreach ($detail->itemDistribusis as $item) {
                         $produk = $item->produk;
                         $produk->stok_tersedia -= $item->jumlah;
@@ -344,17 +441,107 @@ class DistribusiController extends Controller
                     }
                 }
             }
+
             DB::commit();
             return redirect()->route('distribusi.show', $id)
                 ->with('success', 'Distribusi berhasil diperbarui.');
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()
-                ->withInput()
+            return back()->withInput()
                 ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
+    // public function update(Request $request, $id)
+    // {
+    //     // $distribusi = Distribusi::findOrFail($id);
+    //     $distribusi = Distribusi::with('distribusiDetails.itemDistribusis.produk')
+    //         ->findOrFail($id);
+
+    //     $statusLama = $distribusi->status;
+    //     $statusBaru = $request->input('status', $statusLama);
+    //     // $statusBaru = $request->status ?? $statusLama;
+    //     // $statusBaru = $request->status;
+    //     $request->validate([
+    //         'tanggal_distribusi' => 'required|date',
+    //         'status' => 'required|in:pending,selesai,batal',
+    //         'keterangan' => 'nullable|string',
+    //         'detail' => 'required|array|min:1',
+    //         'detail.*.status_detail' => 'nullable|in:pending,diterima',
+    //         // 'detail.*.status_detail' => 'required|in:pending,diterima',
+    //         'detail.*.nama_penerima' => 'required|string|max:50',
+    //         'detail.*.catatan' => 'nullable|string',
+    //     ]);
+    //     // FINAL LOCK (SAMA PRODUKSI)
+    //     if (in_array($statusLama, ['selesai','batal']) && $statusBaru !== $statusLama) {
+    //         return back()->with('error', 'Distribusi sudah final dan tidak dapat diubah.');
+    //     }
+    //     DB::beginTransaction();
+    //     try {
+    //         // Update header distribusi
+    //         $dataUpdate = [
+    //             'keterangan' => $request->keterangan,
+    //             'tanggal_distribusi' => $request->tanggal_distribusi,
+    //         ];
+
+    //         // hanya boleh ganti status kalau masih pending
+    //         if ($statusLama === 'pending') {
+    //             $dataUpdate['status'] = $request->status;
+    //         }
+
+    //         // tanggal BOLEH diubah walaupun selesai
+    //         $dataUpdate['tanggal_distribusi'] = $request->tanggal_distribusi;
+
+    //         $distribusi->update($dataUpdate);
+
+
+    //         // Update detail distribusi
+    //         foreach ($request->detail as $detailData) {
+    //             $detail = DistribusiDetail::find($detailData['id_distribusi_detail']);
+    //             if ($detail->status_detail === 'pending') {
+    //                 $detail->update([
+    //                     'status_detail' => $detailData['status_detail'] ?? 'pending',
+    //                     'nama_penerima' => $detailData['nama_penerima'],
+    //                     'catatan' => $detailData['catatan'],
+    //                 ]);
+    //             } else {
+    //                 // status_detail diterima → LOCK
+    //                 $detail->update([
+    //                     'nama_penerima' => $detailData['nama_penerima'],
+    //                     'catatan' => $detailData['catatan'],
+    //                 ]);
+    //             }
+    //             // if ($detail) {
+    //             //     $detail->update([
+    //             //         'status_detail' => $detailData['status_detail'],
+    //             //         'nama_penerima' => $detailData['nama_penerima'],
+    //             //         'catatan' => $detailData['catatan'],
+    //             //     ]);
+    //             // }
+    //         }
+    //         // 🔥 POTONG STOK SEKALI SAAT pending → selesai
+    //         if ($statusLama === 'pending' && $statusBaru === 'selesai') {
+    //             foreach ($distribusi->distribusiDetails as $detail) {
+    //                 foreach ($detail->itemDistribusis as $item) {
+    //                     $produk = $item->produk;
+    //                     $produk->stok_tersedia -= $item->jumlah;
+    //                     if ($produk->stok_tersedia < 0) $produk->stok_tersedia = 0;
+    //                     $produk->status = $produk->stok_tersedia > 0 ? 'tersedia' : 'habis';
+    //                     $produk->save();
+    //                 }
+    //             }
+    //         }
+    //         DB::commit();
+    //         return redirect()->route('distribusi.show', $id)
+    //             ->with('success', 'Distribusi berhasil diperbarui.');
+
+    //     } catch (\Exception $e) {
+    //         DB::rollBack();
+    //         return redirect()->back()
+    //             ->withInput()
+    //             ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+    //     }
+    // }
 
     /**
      * Remove the specified resource from storage.
@@ -366,9 +553,14 @@ class DistribusiController extends Controller
             $distribusi = Distribusi::findOrFail($id);
 
             // 🔒 HANYA BOLEH HAPUS JIKA MASIH PENDING
-            if ($distribusi->status === 'batal') {
-                return redirect()->route('distribusi.show', $id)
-                    ->with('error', 'Distribusi dengan status batal tidak dapat diedit.');
+            // if ($distribusi->status === 'batal') {
+            //     return redirect()->route('distribusi.show', $id)
+            //         ->with('error', 'Distribusi dengan status batal tidak dapat diedit.');
+            // }
+            if (in_array($distribusi->status, ['selesai', 'batal'])) {
+                return back()->with('error', 'Distribusi final tidak boleh dihapus.');
+                // return redirect()->route('distribusi.show', $id)
+                //     ->with('error', 'Distribusi dengan status ' . $distribusi->status . ' tidak dapat diedit.');
             }
 
             // ❌ TIDAK ADA LOGIKA STOK DI SINI
