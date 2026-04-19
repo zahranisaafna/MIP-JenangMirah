@@ -247,9 +247,9 @@
                         </form>
                     </div>
 
-                    <div class="mt-3">
+                    {{-- <div class="mt-3">
                         {{ $produksi->links('pagination::bootstrap-4') }}
-                    </div>
+                    </div> --}}
                 </div>
             </div>
         </div>
