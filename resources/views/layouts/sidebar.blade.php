@@ -6,7 +6,7 @@
         </div>
         <div class="sidebar-brand-text">
             <span style="display:block; margin-bottom: 20px;">MANAJEMEN</span>
-            <span style="display:block; margin-bottom: 20px;">INVENTORY</span>
+            <span style="display:block; margin-bottom: 20px;">INVENTARIS</span>
             <span style="display:block; margin-bottom: 20px;">PRODUKSI</span>
             <span style="display:block; margin-bottom: 20px;">JENANG MIRAH</span>
         </div>
