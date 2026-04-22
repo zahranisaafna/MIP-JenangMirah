@@ -93,7 +93,7 @@ class LaporanProduksiController extends Controller
         //     $query->whereDate('tanggal_produksi', '<=', request('end_date'));
         // }
 
-        $produksi = $query->orderBy('tanggal_produksi', 'desc')
+        $produksi = $query->orderBy('tanggal_produksi', 'asc')
             ->paginate($perPage)
             ->appends(request()->except('page'));
 

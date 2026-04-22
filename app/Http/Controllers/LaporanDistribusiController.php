@@ -73,7 +73,7 @@ class LaporanDistribusiController extends Controller
     }
 
 
-        $distribusi = $query->orderBy('tanggal_distribusi', 'desc')
+        $distribusi = $query->orderBy('tanggal_distribusi', 'asc')
             ->paginate($perPage)
             ->appends($request->except('page'));
 
