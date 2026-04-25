@@ -91,8 +91,8 @@ class UserSettingController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'nama_user' => 'required|string|max:100',
-            'username' => 'required|string|max:50|unique:users,username',
+            'nama_user' => 'required|string|max:50',
+            'username' => 'required|string|max:8|unique:users,username',
             'email' => 'nullable|email|max:200|unique:users,email',
             'password' => 'required|string|min:4|confirmed',
             'role' => 'required|in:admin,karyawanproduksi,owner',
@@ -124,8 +124,9 @@ class UserSettingController extends Controller
         // }
         // $id_user = 'U' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
         
-        // Generate ID User otomatis dengan format USR000000X
-        $lastUser = User::orderBy('id_user', 'desc')->first();
+        // Generate ID User otomatis dengan format USR01
+        // $lastUser = User::orderBy('id_user', 'desc')->first();
+        $lastUser = User::orderByRaw('CAST(SUBSTRING(id_user, 4) AS UNSIGNED) DESC')->first();
         if ($lastUser && preg_match('/(\d+)$/', $lastUser->id_user, $matches)) {
             $lastNumber = (int) $matches[1];
             $newNumber = $lastNumber + 1;
@@ -170,22 +171,22 @@ class UserSettingController extends Controller
         $user = User::findOrFail($id);
 
         $validated = $request->validate([
-            'nama_user' => 'required|string|max:100',
+            'nama_user' => 'required|string|max:50',
             'username' => [
                 'required',
                 'string',
-                'max:50',
+                'max:8',
                 Rule::unique('users', 'username')->ignore($user->id_user, 'id_user')
             ],
             'email' => [
                 'nullable',
                 'email',
-                'max:50',
+                'max:200',
                 Rule::unique('users', 'email')->ignore($user->id_user, 'id_user')
             ],
             'password' => 'nullable|string|min:4|confirmed',
             'role' => 'required|in:admin,karyawanproduksi,owner',
-            'no_telepon' =>[ 'required|string|max:15|regex:/^[0-9]+$/',
+            'no_telepon' =>['required', 'string', 'max:15', 'regex:/^[0-9]+$/',
                             Rule::unique('users', 'no_telepon')->ignore($user->id_user, 'id_user')], 
             'status' => 'required|in:aktif,non_aktif',
         ], [
