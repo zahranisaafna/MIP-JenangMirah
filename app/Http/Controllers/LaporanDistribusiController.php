@@ -149,14 +149,14 @@ class LaporanDistribusiController extends Controller
             break;
     }
 
-        $distribusi = $query->orderBy('tanggal_distribusi', 'desc')->get();
+        $distribusi = $query->orderBy('tanggal_distribusi', 'asc')->get();
 
         // Hitung statistik
         $totalDistribusi = $distribusi->count();
         $totalLokasi = $distribusi->pluck('distribusiDetails')->flatten()->pluck('id_lokasi')->unique()->count();
         $totalItem = $distribusi->pluck('distribusiDetails')->flatten()->pluck('itemDistribusis')->flatten()->sum('jumlah');
 
-        $pdf = Pdf::loadView('module.Laporan.distribusi.pdf', compact(
+        $pdf = Pdf::loadView('module.laporan.distribusi.pdf', compact(
             'distribusi',
             'periodText',
             'totalDistribusi',
