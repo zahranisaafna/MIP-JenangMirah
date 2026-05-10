@@ -181,8 +181,8 @@
                                 <tr>
                                     <th class="text-center">No</th>
                                     <th class="text-center">ID Detail</th>
-                                    <th class="text-center">Resep</th>
-                                    <th class="text-center">Produk</th>
+                                    <th class="text-center">Resep Produk</th>
+                                    <th class="text-center">Nama Produk</th>
                                     <th class="text-center">Target</th>
                                     <th class="text-center">Berhasil</th>
                                     <th class="text-center">Gagal</th>

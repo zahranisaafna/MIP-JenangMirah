@@ -187,16 +187,20 @@
                             <!-- Tanggal Kadaluarsa -->
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label for="tanggal_kadaluarsa">Tanggal Kadaluarsa</label>
+                                    <label for="tanggal_kadaluarsa">Tanggal Kadaluarsa <span class="text-danger">*</span></label>
+                                    {{-- <label for="tanggal_kadaluarsa">Tanggal Kadaluarsa</label> --}}
                                     <input type="text" 
                                         class="form-control @error('tanggal_kadaluarsa') is-invalid @enderror" 
                                         id="tanggal_kadaluarsa" 
                                         name="tanggal_kadaluarsa" 
-                                        value="{{ old('tanggal_kadaluarsa', !empty($bahanBaku->tanggal_kadaluarsa) ? date('Y-m-d', strtotime($bahanBaku->tanggal_kadaluarsa)) : '') }}">
+                                        value="{{ old('tanggal_kadaluarsa', !empty($bahanBaku->tanggal_kadaluarsa) ? date('Y-m-d', strtotime($bahanBaku->tanggal_kadaluarsa)) : '') }}" required>
                                     @error('tanggal_kadaluarsa')
                                         <span class="invalid-feedback">{{ $message }}</span>
                                     @enderror
-                                    <small class="text-muted">Kosongkan jika tidak ada tanggal kadaluarsa</small>
+                                    {{-- <small class="text-muted">Kosongkan jika tidak ada tanggal kadaluarsa</small> --}}
+                                    <small class="text-muted">
+                                        Saat beli stok baru, update tanggal kadaluarsa di halaman edit
+                                    </small>
                                 </div>
                             </div>
                         </div>

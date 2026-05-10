@@ -54,8 +54,12 @@ class BahanBakuController extends Controller
             ->distinct()
             ->orderBy('kategori')
             ->pluck('kategori');
-
-        return view('module.bahan-baku.index', compact('bahanBaku', 'allowed', 'perPage', 'kategoriList'));
+        $bahanKadaluarsaDekat = DB::table('bahan_baku')
+        ->whereNotNull('tanggal_kadaluarsa')
+        ->whereRaw('tanggal_kadaluarsa <= DATE_ADD(NOW(), INTERVAL 30 DAY)')
+        ->orderBy('tanggal_kadaluarsa', 'asc')
+        ->get();
+        return view('module.bahan-baku.index', compact('bahanBaku', 'allowed', 'perPage', 'kategoriList', 'bahanKadaluarsaDekat'));
     }
 
     // public function index()
@@ -105,7 +109,7 @@ class BahanBakuController extends Controller
             'stok_minimum' => 'required|numeric|min:0',
             'stok_saat_ini' => 'required|numeric|min:0',
             'harga_rata_rata' => 'required|numeric|min:0',
-            'tanggal_kadaluarsa' => 'nullable|date|after:today',
+            'tanggal_kadaluarsa' => 'required|date|after:today',
             'deskripsi' => 'nullable|string',
         ], [
             'nama_bahan.required' => 'Nama bahan harus diisi',
@@ -119,6 +123,7 @@ class BahanBakuController extends Controller
             'stok_saat_ini.min' => 'Stok saat ini tidak boleh negatif',
             'harga_rata_rata.required' => 'Harga rata-rata harus diisi',
             'harga_rata_rata.min' => 'Harga rata-rata tidak boleh negatif',
+            'tanggal_kadaluarsa.required' => 'Tanggal kadaluarsa harus diisi',
             'tanggal_kadaluarsa.after' => 'Tanggal kadaluarsa harus setelah hari ini',
         ]);
         
@@ -270,7 +275,8 @@ class BahanBakuController extends Controller
             'stok_saat_ini' => 'required|numeric|min:0',
             'harga_rata_rata' => 'required|numeric|min:0',
             // 'tanggal_kadaluarsa' => 'nullable|date|after:today',
-            'tanggal_kadaluarsa' => 'nullable|date',
+            // 'tanggal_kadaluarsa' => 'required|date|after:today',
+            'tanggal_kadaluarsa' => 'required|date|after_or_equal:today',
             'deskripsi' => 'nullable|string',
         ], [
             'nama_bahan.required' => 'Nama bahan harus diisi',
@@ -284,23 +290,37 @@ class BahanBakuController extends Controller
             'stok_saat_ini.min' => 'Stok saat ini tidak boleh negatif',
             'harga_rata_rata.required' => 'Harga rata-rata harus diisi',
             'harga_rata_rata.min' => 'Harga rata-rata tidak boleh negatif',
-            'tanggal_kadaluarsa.after' => 'Tanggal kadaluarsa harus setelah hari ini',
+            'tanggal_kadaluarsa.required' => 'Tanggal kadaluarsa harus diisi',
+            'tanggal_kadaluarsa.after_or_equal' => 'Tanggal kadaluarsa tidak boleh sebelum hari ini',
+            // 'tanggal_kadaluarsa.after' => 'Tanggal kadaluarsa harus setelah hari ini',
         ]);
         
         // Update timestamps
         $validated['updated_at'] = now();
+        $exists = DB::table('bahan_baku')->where('id_bahan_baku', $id)->exists();
 
-        $updated = DB::table('bahan_baku')
-            ->where('id_bahan_baku', $id)
-            ->update($validated);
-            
-        if (!$updated) {
+        if (!$exists) {
             return redirect()->route('bahan-baku.index')
                 ->with('error', 'Bahan baku tidak ditemukan');
         }
 
+        DB::table('bahan_baku')
+            ->where('id_bahan_baku', $id)
+            ->update($validated);
+
         return redirect()->route('bahan-baku.index')
             ->with('success', 'Bahan baku berhasil diperbarui');
+        // $updated = DB::table('bahan_baku')
+        //     ->where('id_bahan_baku', $id)
+        //     ->update($validated);
+            
+        // if (!$updated) {
+        //     return redirect()->route('bahan-baku.index')
+        //         ->with('error', 'Bahan baku tidak ditemukan');
+        // }
+
+        // return redirect()->route('bahan-baku.index')
+        //     ->with('success', 'Bahan baku berhasil diperbarui');
     }
 
     /**

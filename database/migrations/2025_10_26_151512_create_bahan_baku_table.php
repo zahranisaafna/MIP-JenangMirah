@@ -21,7 +21,7 @@ return new class extends Migration
             // $table->decimal('stok_saat_ini', 10, 2);
             $table->unsignedInteger('stok_saat_ini');
             $table->decimal('harga_rata_rata', 12, 2);
-            $table->date('tanggal_kadaluarsa')->nullable();
+            $table->date('tanggal_kadaluarsa');
             $table->text('deskripsi')->nullable();
             $table->timestamps();
         });

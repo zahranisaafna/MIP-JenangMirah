@@ -66,7 +66,6 @@
                             </button>
                         </div>
                     @endif
-
                     @php
                         $allowed = $allowed ?? [20, 40, 60, 80, 99];
                         $perPage = $perPage ?? (int) request('per_page', default: 20);
@@ -78,6 +77,36 @@
                             return date('d', $ts) . '-' . $b[(int)date('n',$ts)] . '-' . date('Y',$ts);
                         }
                     @endphp
+                    @if(!empty($bahanKadaluarsaDekat) && $bahanKadaluarsaDekat->count() > 0)
+                        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                            <h6 class="mb-1">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <strong>Habiskan Stok Ini Terlebih Dahulu!</strong>
+                            </h6>
+                            <p class="mb-1 small">
+                                Bahan berikut kadaluarsanya dalam <strong>30 hari ke depan</strong>. 
+                                Gunakan stok ini sebelum membuka stok baru:
+                            </p>
+                            <ul class="mb-0 small">
+                                @foreach($bahanKadaluarsaDekat as $bk)
+                                @php $hariSisa = (int) now()->startOfDay()->diffInDays($bk->tanggal_kadaluarsa, false); @endphp
+                                {{-- @php $hariSisa = now()->diffInDays($bk->tanggal_kadaluarsa, false); @endphp --}}
+                                <li>
+                                    <strong>{{ $bk->nama_bahan }}</strong>
+                                    — Kadaluarsa: 
+                                    <strong class="{{ $hariSisa <= 0 ? 'text-danger' : 'text-warning' }}">
+                                        {{ tgl3($bk->tanggal_kadaluarsa) }}
+                                        ({{ $hariSisa <= 0 ? 'sudah kadaluarsa!' : $hariSisa . ' hari lagi' }})
+                                    </strong>
+                                    — Sisa stok: {{ number_format($bk->stok_saat_ini) }} {{ $bk->satuan }}
+                                </li>
+                                @endforeach
+                            </ul>
+                            <button type="button" class="close" data-dismiss="alert">
+                                <span>&times;</span>
+                            </button>
+                        </div>
+                    @endif
                     {{-- Form Filter --}}
                     <div class="card mb-3">
                         <div class="card-body py-2">

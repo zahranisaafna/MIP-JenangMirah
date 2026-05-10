@@ -163,7 +163,23 @@
                                 </tr>
                                 <tr>
                                     <th class="font-weight-normal">Tanggal Kadaluarsa</th>
-                                    <td>: {{ $bahanBaku->tanggal_kadaluarsa ? tgl3($bahanBaku->tanggal_kadaluarsa) : '-' }}</td>
+                                    {{-- <td>: {{ $bahanBaku->tanggal_kadaluarsa ? tgl3($bahanBaku->tanggal_kadaluarsa) : '-' }}</td> --}}
+                                    <td>:
+                                        @if($bahanBaku->tanggal_kadaluarsa)
+                                            @php $hariSisa = (int) now()->startOfDay()->diffInDays($bahanBaku->tanggal_kadaluarsa, false); @endphp
+                                            {{-- @php $hariSisa = now()->diffInDays($bahanBaku->tanggal_kadaluarsa, false); @endphp --}}
+                                            {{ tgl3($bahanBaku->tanggal_kadaluarsa) }}
+                                            @if($hariSisa <= 0)
+                                                <span class="badge badge-danger ml-1">Sudah Kadaluarsa!</span>
+                                            @elseif($hariSisa <= 30)
+                                                <span class="badge badge-warning ml-1">{{ $hariSisa }} hari lagi</span>
+                                            @else
+                                                <span class="badge badge-success ml-1">Aman</span>
+                                            @endif
+                                        @else
+                                            -
+                                        @endif
+                                    </td>
                                 </tr>
                             </table>
                         </div>

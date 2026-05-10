@@ -230,8 +230,8 @@
                             <table class="table table-bordered" id="tableDetail">
                                 <thead class="thead-light">
                                     <tr>
-                                        <th style="width: 20%">Resep</th>
-                                        <th style="width: 20%">Produk</th>
+                                        <th style="width: 20%">Resep Produk</th>
+                                        <th style="width: 20%"> Nama Produk</th>
                                         <th style="width: 15%">Jumlah Target</th>
                                         <th style="width: 40%">Kebutuhan Bahan</th>
                                         <th style="width: 5%">Aksi</th>
@@ -258,8 +258,8 @@
                             <table class="table table-bordered" id="tableDetail">
                                 <thead class="thead-light">
                                     <tr>
-                                        <th style="width: 15%">Resep</th>
-                                        <th style="width: 15%">Produk</th>
+                                        <th style="width: 15%">Resep Produk</th>
+                                        <th style="width: 15%">Nama Produk</th>
                                         <th style="width: 10%">Target</th>
                                         <th style="width: 12%">Berhasil</th>
                                         <th style="width: 12%">Gagal</th>

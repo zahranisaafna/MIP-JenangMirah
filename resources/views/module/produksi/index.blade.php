@@ -33,9 +33,17 @@
                 <div class="card-header">
                     <div class="d-flex justify-content-between align-items-center">
                         <h5 class="card-title">Daftar kegiatan produksi yang mencatat proses pembuatan produk pada setiap batch harian.</h5>
-                        <a href="{{ route('produksi.create') }}" class="btn btn-primary btn-sm">
+                        <button type="button" 
+                                class="btn btn-primary btn-sm" 
+                                data-toggle="modal" 
+                                data-target="#modalKonfirmasiTambah">
                             <i class="fas fa-plus"></i> Tambah Produksi
-                        </a>
+                        </button>
+                        {{-- <a href="{{ route('produksi.create') }}" class="btn btn-primary btn-sm">
+                            class="btn btn-primary btn-sm"
+                            onclick="return konfirmasiTambah()">
+                            <i class="fas fa-plus"></i> Tambah Produksi
+                        </a> --}}
                     </div>
                 </div>
                 <div class="card-body">
@@ -267,6 +275,34 @@
   .card + .card { margin-top: .75rem; }
   .text-muted { color: #555 !important; font-weight: 500; }
 </style>
+<!-- Modal Konfirmasi Tambah Produksi -->
+<div class="modal fade" id="modalKonfirmasiTambah" tabindex="-1" role="dialog" aria-labelledby="modalKonfirmasiLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title" id="modalKonfirmasiLabel">
+                    <i class="fas fa-exclamation-triangle mr-2"></i> Perhatian!
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Setelah status produksi diubah menjadi <strong>SELESAI</strong>, data <strong>tidak dapat diedit maupun dihapus</strong>.</p>
+                <p>Pastikan semua data sudah benar sebelum menyimpan.</p>
+                <p class="mb-0">Lanjutkan tambah produksi?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fas fa-times mr-1"></i> Batal
+                </button>
+                <a href="{{ route('produksi.create') }}" class="btn btn-primary">
+                    <i class="fas fa-arrow-right mr-1"></i> Lanjutkan
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script>
